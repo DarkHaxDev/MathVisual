@@ -620,7 +620,7 @@ update msg model =
             Recurrent _ amount _ _ ->
               { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges
                    ,
-                   reExpense = model.reExpense - amount
+                   reExpense = model.reExpense + amount
                    }
             _ -> model
 
