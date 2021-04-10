@@ -25,9 +25,7 @@ myShapes model =
         Nday->[inputTemplate "Enter: Day" model.nDay]
         Nmonth->[inputTemplate "Enter: Month" model.nMonth]        
         Nyear->[inputTemplate "Enter: Year" model.nYear]      
-        Rday->[inputTemplate "Enter: Day" model.rDay]
-        Rmonth->[inputTemplate "Enter: Month" model.rMonth]
-        Ryear->[inputTemplate "Enter: Year" model.rYear]
+        
         ChooseCat->[]
         MainMenu  ->
             [
@@ -64,7 +62,7 @@ myShapes model =
                               "" -> "YYYY"
                               _ -> model.nYear) ToNyear (-8,-2) 0.48 |> move (81,-9)
               ,case model.expenseTypeRN of
-                               "Recurrent" -> recurrentInputs model                      
+                               "Recurrent" ->  group[] ---recurrentInputs model                      
                                "Normal" -> group[]
                                otherwise   -> group[]
               ,buttonCat (case model.catName of
@@ -197,7 +195,7 @@ stringFromBool value =
   else
     "False"
 
-recurrentInputs model = group[smallInputBox (case model.rDay of
+{-recurrentInputs model = group[smallInputBox (case model.rDay of
                               "" -> "DD"
                               _ -> model.rDay) ToRday (-4,-2) 0.48 |> move (44,-25)
                         ,smallInputBox (case model.rMonth of
@@ -206,7 +204,7 @@ recurrentInputs model = group[smallInputBox (case model.rDay of
                         ,mediumInputBox (case model.rYear of
                                         "" -> "YYYY"
                                         _ -> model.rYear) ToRyear (-8,-2) 0.48 |> move (81,-25)]
-
+-}
 checkDate expense model = let
                                       currModelMonth = (model.date.month)
                                       currModelYear = (model.date.year)
@@ -218,7 +216,7 @@ checkDate expense model = let
 
 
 createExpenseFromInput model = case model.expenseTypeRN of
-                                                  "Recurrent" -> Recurrent model.expenseName (Maybe.withDefault 0 (String.toFloat model.expenseAmount)) {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} {day = (fromString model.rDay) , month = (fromString model.rMonth) , year = (fromString model.rYear)} 
+                                                  "Recurrent" -> Recurrent model.expenseName (Maybe.withDefault 0 (String.toFloat model.expenseAmount)) {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} 
                                                   "Normal" -> Normal model.expenseName (Maybe.withDefault 0 (String.toFloat model.expenseAmount)) {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} 
                                                   otherwise -> Normal "Fake" 0.0 {day = 21, month = 3, year = 2}
                                
@@ -385,9 +383,6 @@ type Msg = Tick Float GetKeyState
          | ToNday
          | ToNmonth
          | ToNyear
-         | ToRday
-         | ToRmonth
-         | ToRyear
          | ToRExpense
          | ToNExpense
          | ToCurrCategory Category
@@ -408,9 +403,6 @@ type State = MainMenu
            | Nday
            | Nmonth
            | Nyear
-           | Rday
-           | Rmonth
-           | Ryear
            | ChooseCat
 
 
@@ -457,26 +449,7 @@ update msg model =
                                              |> String.concat
                                               )
                               }
-                Rday -> { model
-                                      | rDay = model.rDay 
-                                         ++ ( List.concatMap (didType keys) allowedKeys
-                                             |> String.concat
-                                              )
-                              }
-                Rmonth -> { model
-                                      | rMonth = model.rMonth 
-                                         ++ ( List.concatMap (didType keys) allowedKeys
-                                             |> String.concat
-                                              )
-                              }
-                Ryear -> { model
-                                      | rYear = model.rYear
-                                         ++ ( List.concatMap (didType keys) allowedKeys
-                                             |> String.concat
-                                              )
-                              }
-                otherwise ->
-                    model
+                otherwise ->   model
         ClearInput -> case model.state of
                 ExpenseType -> { model| expenseType = ""}
                 ExpenseName -> { model| expenseName = ""}
@@ -484,9 +457,7 @@ update msg model =
                 Nday -> { model| nDay = ""}
                 Nmonth -> { model| nMonth = ""}
                 Nyear -> { model| nYear = ""}
-                Rday -> { model| rDay = ""}
-                Rmonth -> { model| rMonth = ""}
-                Ryear -> { model| rYear = ""}
+                
                 otherwise ->
                     model
         ToRExpense -> case model.state of 
@@ -513,9 +484,6 @@ update msg model =
                     nDay = "" , 
                     nMonth = "", 
                     nYear = "", 
-                    rDay = "", 
-                    rMonth = "", 
-                    rYear = "", 
                     expenseTypeRN = "",
                     catName = "",
                     categories = (List.map (\x -> if ((x.name) == (model.currentCategory.name)) then {x | expenseList = x.expenseList ++ [createExpenseFromInput model]} else x) model.categories)  
@@ -557,22 +525,7 @@ update msg model =
                     { model | state = Nyear  } 
                 otherwise ->
                     model
-        ToRday -> case model.state of
-                MainMenu  ->
-                    { model | state = Rday  } 
-                otherwise ->
-                    model
         
-        ToRmonth -> case model.state of
-                MainMenu  ->
-                    { model | state = Rmonth  } 
-                otherwise ->
-                    model
-        ToRyear -> case model.state of
-                MainMenu  ->
-                    { model | state = Ryear  } 
-                otherwise ->
-                    model
         ToCategories ->
             case model.state of
                 MainMenu  ->
@@ -679,9 +632,6 @@ type alias Model =
     , nDay: String
     , nMonth: String
     , nYear: String
-    , rDay: String
-    , rMonth: String
-    , rYear: String
     , dummyExpenseList1: List Expenses
     , expenseTypeRN: String
     , currentCategory: Category
@@ -711,9 +661,6 @@ init = { time = 0
        , nDay = ""
        , nMonth = ""
        , nYear = ""
-       , rDay = ""
-       , rMonth = ""
-       , rYear = ""
        , dummyExpenseList1 = []
        , expenseTypeRN = ""
        , currentCategory = food
@@ -1033,4 +980,3 @@ scrollBar model = group [
                                                    |> notifyLeaveAt SwitchMousePressState 
                        Released  -> group []
   ]
-
