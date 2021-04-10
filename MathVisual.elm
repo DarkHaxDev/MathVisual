@@ -37,7 +37,7 @@ myShapes model =
               ,GraphicSVG.text "Budget" |> filled black  |>move(-107,60) |>scale 0.8
               ,GraphicSVG.text "Expenses" |> filled black  |>move(-50, 60) |>scale 0.8
               ,GraphicSVG.text "20000" |> filled black |>move(-115,50) |>scale 0.7
-              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount (List.filter (\ls -> checkDate ls model) (List.filter checkForNorm x.expenseList) ) 0) model.categories) + model.reExpense) ) |> filled black |>move(-47,50) |>scale 0.7
+              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount (List.filter (\ls -> checkDate ls model) x.expenseList ) 0) model.categories) + model.reExpense) ) |> filled black |>move(-47,50) |>scale 0.7
               ,button "All Expenses" ToCategories (-21,-2.5) 0.6 |> move (0,-45.5)
               ,buttonRN model "Recurrent" ToRExpense (-9,-2.5) 0.4 gray darkRed |> move (80,55)
               ,buttonRN model "Normal" ToNExpense (-7,-2.5) 0.4 darkRed gray |> move (50,55)
@@ -617,8 +617,6 @@ update msg model =
             Recurrent _ amount _ _ ->
               { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges
                    ,
-                   reExpense = model.reExpense + amount
-                   ,
                    categories = (addRecurrentRecord model.categories exp model)
                    }
             _ -> model
@@ -876,10 +874,13 @@ removeExpense exp cat = {cat | expenseList = List.filter checkForNothing (List.m
 
 takeOut : Expenses -> Expenses -> Expenses
 takeOut removeIt checkIt =
-  if removeIt == checkIt then
-    Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
-  else
-    checkIt
+  case removeIt of
+    Recurrent name amount date _ -> 
+      if removeIt == checkIt then
+        Normal name amount date
+      else
+        checkIt
+    _ -> checkIt
 
 -- An Expense is as follows: Name, Cost, and date of expenditure. For recurrent, the only change is that date is the time of the next automatic deduction. 
 type Expenses = Normal String Float Date
