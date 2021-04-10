@@ -1,3 +1,4 @@
+
 import String as String
 import Html as Html
 import Html.Attributes as Attributes
@@ -73,6 +74,10 @@ myShapes model =
             [
               roundedRect 100 100 5
                 |> filled lightBlue
+                |> move (-40, 0)
+              ,
+              roundedRect 100 100 5
+                |> outlined (solid 0.5) black
                 |> move (-40, 0)
               ,
               buildListOfRe model
@@ -238,7 +243,9 @@ createPartialCategories categoryList numberOfCategories position = case category
                                                             x::xs -> group 
                                                                           [
                                                                            group [roundedRect ((175/numberOfCategories)-6) 75 5
-                                                                                         |> filled lightBlue        
+                                                                                         |> filled (rgb 150 200 250) 
+                                                                                  , roundedRect ((175/numberOfCategories)-6) 75 5
+                                                                                         |> outlined (solid 0.5) black     
                                                                                   , text x.name |> filled black |> scale (0.55-1.3/numberOfCategories) |> move (-12,25)
                                                                                   , createLatestExpense x.expenseList |> scale (1.2-1.5/numberOfCategories)
                                                                                  ] |> move (position,0) |> notifyTap (ToFullList x) |> notifyTap ResetScroll 
@@ -263,7 +270,7 @@ createLatestExpense expenseList = case expenseList of
                                                                                  , text "Date:" |> filled black |> scale 0.32 |> move (-12,-15)
                                                                                  , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |> scale 0.3 |> move (-12,-20)
                                                                                ]
-                                              Recurrent name amount date extra-> group [
+                                              Recurrent name amount extra date-> group [
                                                                                  text "Latest Expense:" |> filled black |> scale 0.32 |> move (-12,15)
                                                                                  , text name |> filled black |> scale 0.3 |> move (-12,10)
                                                                                  , text "Amount:" |> filled black |> scale 0.32 |> move (-12,0)
@@ -735,7 +742,7 @@ makeDueExpense exp =
   Recurrent name amount next _ ->
     group [
       roundedRect 200 100 10
-        |> filled lightBlue
+        |> filled (rgb 150 200 250)
       ,
       text ("The automatic expense " ++ name ++ " is due today. Automatically deducting " ++ (String.fromFloat amount) ++ " from budget.")
         |> filled black
@@ -775,7 +782,11 @@ buildReExpense exp =
   case exp of
     Recurrent name amount initDate countdown -> group [
       roundedRect 200 80 10
-        |> filled blue
+        |> filled (rgb 150 200 250)
+        |> move (60, 0)
+      ,
+      roundedRect 200 80 10
+        |> outlined (solid 0.5) black
         |> move (60, 0)
       ,
       text name
@@ -955,3 +966,4 @@ scrollBar model = group [
                                                    |> notifyLeaveAt SwitchMousePressState 
                        Released  -> group []
   ]
+
