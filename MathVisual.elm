@@ -39,7 +39,7 @@ myShapes model =
               ,GraphicSVG.text "Budget" |> filled black  |>move(-107,60) |>scale 0.8
               ,GraphicSVG.text "Expenses" |> filled black  |>move(-50, 60) |>scale 0.8
               ,GraphicSVG.text "20000" |> filled black |>move(-115,50) |>scale 0.7
-              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount (List.filter checkForNorm x.expenseList) 0) model.categories) + model.reExpense) ) |> filled black |>move(-47,50) |>scale 0.7
+              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount (List.filter (\ls -> checkDate ls model) (List.filter checkForNorm x.expenseList) ) 0) model.categories) + model.reExpense) ) |> filled black |>move(-47,50) |>scale 0.7
               ,button "All Expenses" ToCategories (-21,-2.5) 0.6 |> move (0,-45.5)
               ,buttonRN model "Recurrent" ToRExpense (-9,-2.5) 0.4 gray darkRed |> move (80,55)
               ,buttonRN model "Normal" ToNExpense (-7,-2.5) 0.4 darkRed gray |> move (50,55)
@@ -206,6 +206,15 @@ recurrentInputs model = group[smallInputBox (case model.rDay of
                         ,mediumInputBox (case model.rYear of
                                         "" -> "YYYY"
                                         _ -> model.rYear) ToRyear (-8,-2) 0.48 |> move (81,-25)]
+
+checkDate expense model = let
+                                      currModelMonth = (model.date.month)
+                                      currModelYear = (model.date.year)
+                                      currExpense = case expense of
+                                                              Normal name amount date -> date
+                                                              Recurrent _ _ _ date -> date
+                                              in if ((currExpense.month == currModelMonth) && (currModelYear == currExpense.year)) then True else False
+
 
 
 createExpenseFromInput model = case model.expenseTypeRN of
