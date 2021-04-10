@@ -613,6 +613,16 @@ update msg model =
         NextDay ->
           { model | date = convertMaxDates (dateSubtraction model.date {day = -1, month = 0, year = 0})
                     ,
+                    reExpense =
+                      let
+                        ogDate = model.date
+                        updatedDate = convertMaxDates (dateSubtraction model.date {day = -1, month = 0, year = 0})
+                      in
+                        if ogDate.month + 1 == updatedDate.month || (0 == updatedDate.month && updatedDate.year /= 0) then
+                          0
+                        else
+                          model.reExpense
+                    ,
                     pendingCharges = (alterCharges model.categories)
                     ,
                     categories = (alterCategory model.categories)
