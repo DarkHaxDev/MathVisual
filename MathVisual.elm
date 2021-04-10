@@ -151,7 +151,7 @@ myShapes model =
               , triangle 10 |> outlined (solid 0.5) black |> rotate (degrees -30) |> move (55,0) 
               , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees 30) |> move (55,-15) |> notifyTap ScrollUp
               , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees -30) |> move (55,0) |> notifyTap ScrollDown
-              , createFullList category.expenseList 30 |> move (0,model.scroll) -- add function here instead of group
+              , createFullList category category.expenseList 30 |> move (0,model.scroll) -- add function here instead of group
               , rect 500 500 |> filled white |> move (0,275)
               , text category.name
                   |> centered
@@ -246,22 +246,24 @@ length list = case list of
                 [] -> 0
                 x::xs -> 1 + length xs 
 
-createFullList expenseList ypos = case expenseList of
+createFullList category expenseList ypos = case expenseList of
                           [] -> group []
                           x::xs -> case x of
                                      Normal name amount date -> group 
                                                            [
-                                                             text name |> filled black |>  move (-170,ypos) |> scale 0.5
+                                                             group [rect 10 2 |> filled red |> rotate (degrees 45), rect 10 2 |> filled red |> rotate (degrees -45)] |> move (60, ypos) |> scale 0.5 |> notifyTap (RemoveExpense category x)
+                                                             , text name |> filled black |>  move (-170,ypos) |> scale 0.5
                                                              , text ("$"++(String.fromFloat amount)) |> filled black |>  move (-90,ypos) |> scale 0.5
                                                              , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |>  move (0,ypos) |> scale 0.5
-                                                             , createFullList xs (ypos-15)
+                                                             , createFullList category xs (ypos-15)
                                                            ]
                                      Recurrent name amount date extra -> group 
                                                            [
-                                                             text name |> filled black |>  move (-170,ypos) |> scale 0.5
+                                                             group [rect 10 2 |> filled red |> rotate (degrees 45), rect 10 2 |> filled red |> rotate (degrees -45)] |> move (60, ypos) |> scale 0.5 |> notifyTap (RemoveExpense category x)
+                                                             , text name |> filled black |>  move (-170,ypos) |> scale 0.5
                                                              , text ("$"++(String.fromFloat amount)) |> filled black |>  move (-90,ypos) |> scale 0.5
                                                              , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |>  move (0,ypos) |> scale 0.5
-                                                             , createFullList xs (ypos-15)
+                                                             , createFullList category xs (ypos-15)
                                                            ]                       
                                    
 
@@ -396,6 +398,7 @@ type Msg = Tick Float GetKeyState
          | AcceptCharge Expenses
          | Select Expenses
          | Delete
+         | RemoveExpense Category Expenses
          
 
 type State = MainMenu 
@@ -629,6 +632,16 @@ update msg model =
                   ,
                   selectedRe = Normal "Fake" 0 {day = 0, month = 0, year = 0}
                   }
+        RemoveExpense category expense -> { model | categories = removeSingleExpense model.categories category expense}
+
+removeSingleExpense categories category expense = case categories of
+                                            [] -> []
+                                            x::xs -> if x == category then [{x | expenseList = removeExpenseFromCategory category.expenseList expense}]++xs else [x]++(removeSingleExpense xs category expense)
+
+removeExpenseFromCategory expenseList expense = case expenseList of 
+                                            [] -> []
+                                            x::xs -> if x == expense then xs else [x]++(removeExpenseFromCategory xs expense)
+
 
 
 type alias Model =
