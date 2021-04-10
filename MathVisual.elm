@@ -73,7 +73,17 @@ myShapes model =
               , case model.currentExpenseName of
                                   "" -> group []
                                   _ -> chooseCat
-
+              ,
+              text (dateToString model.date)
+                |> filled black
+                |> move(-100, 50)
+                |> scale 0.5
+              ,
+              button "Next Day" NextDay (-10, 0) 0.5
+                |> scale 0.7
+                |> move (-80, 0)
+              ,
+              buildDueExpenseList model
               ]
         Categories  ->
             [ text "Categories"
@@ -118,20 +128,7 @@ myShapes model =
               scrollBar model
               --,
               --html 0 0 (Html.input [ Attributes.placeholder "Text to reverse", Attributes.value model.content, Events.onInput Change ])
-              ,
-              text (dateToString model.date)
-                |> filled black
-                |> move(65, 50)
-                |> scale 0.5
-              ,
-              button "Next Day" NextDay (-10, 0) 0.5
-                |> move (59, 0)
-              ,
-              buildDueExpenseList model
-              -- ,
-              -- text (String.fromFloat model.budget)
-                -- |> filled black
-                -- |> move (40, 0)
+              
             ]
         Help  ->
             [ text "Help"
@@ -800,7 +797,7 @@ buildDueExpenseList model =
     group <|
       (square 500
         |> filled black
-        |> makeTransparent 0.01
+        |> makeTransparent 0.5
     ) :: (List.map makeDueExpense model.pendingCharges)
 
 expenseEquality : Expenses -> Expenses -> Bool
