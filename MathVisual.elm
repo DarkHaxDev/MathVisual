@@ -4,6 +4,19 @@ import Html as Html
 import Html.Attributes as Attributes
 import Html.Events as Events
 
+logo = group [
+              roundedRect 30 30 5 |> filled (rgb 150 200 250)
+              , roundedRect 30 30 5 |> outlined (solid 0.25) black
+              , rect 18 10 |> filled darkGreen |> move (0,2) |> rotate (degrees 15)
+              , circle 4 |> filled lightGreen |> move (0,2)
+              , rect 18 10 |> outlined (solid 0.25) black |> move (0,2) |> rotate (degrees 12)
+              , rect 18 10 |> filled darkGreen |> move (0,-1) |> rotate (degrees 5)
+              , rect 18 10 |> outlined (solid 0.25) black |> move (0,-1) |> rotate (degrees 5)
+              , roundedRect 20 10 1 |> filled brown |> move (0,-3)
+              , roundedRect 20 10 1 |> outlined (solid 0.25) black |> move (0,-3)
+              , text "$" |> filled lightYellow |> move (-3,-7) |> scale (0.8)
+             ]
+
 myShapes model =
     case model.state of
         ExpenseType -> [inputTemplate "Enter: Normal or Recurrent Expense" model.expenseType]
@@ -18,7 +31,8 @@ myShapes model =
         ChooseCat->[]
         MainMenu  ->
             [
-              roundedRect 40 25 5 |> filled (rgb 37 199 107) |> move(-71, 45)
+              logo
+              ,roundedRect 40 25 5 |> filled (rgb 37 199 107) |> move(-71, 45)
               ,roundedRect 40 25 5 |> outlined (solid 0.5) (rgb 0 0 0) |> move(-71, 45)
               ,roundedRect 40 25 5 |> filled (rgb 37 199 107) |> move(-21.5, 45)
               ,roundedRect 40 25 5 |> outlined (solid 0.5) (rgb 0 0 0) |> move(-21.5, 45)
@@ -147,7 +161,7 @@ myShapes model =
                   [
                    text "Name" |> filled black |> move (-145,50)
                    , text "Amount" |> filled black |> move (-80,50)
-                   , text "Date" |> filled black |> move (10,50)
+                   , text "Date/Next Deduction (d/m/y)" |> filled black |> move (-30,50)
                   ] |> scale 0.6
               , button "Back" ToCategories (-12,-4) 1 |> move (100,-65) |> scale 0.75
             ]
