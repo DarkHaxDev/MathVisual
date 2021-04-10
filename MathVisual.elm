@@ -126,7 +126,12 @@ myShapes model =
               scrollBar model
               --,
               --html 0 0 (Html.input [ Attributes.placeholder "Text to reverse", Attributes.value model.content, Events.onInput Change ])
-              
+              ,
+              if model.selectedRe /= Normal "Fake" 0 {day = 0, month = 0, year = 0} then
+                button "Remove Expense" Delete (-20, 0) 0.5
+                  |> move (40, 40)
+              else
+                group []
             ]
         Help  ->
             [ text "Help"
@@ -389,6 +394,8 @@ type Msg = Tick Float GetKeyState
          | ToChooseCat
          | NextDay
          | AcceptCharge Expenses
+         | Select Expenses
+         | Delete
          
 
 type State = MainMenu 
@@ -615,6 +622,15 @@ update msg model =
                    categories = (addRecurrentRecord model.categories exp model)
                    }
             _ -> model
+        Select exp ->
+          case exp of
+            Recurrent _ _ _ _ -> { model | selectedRe = exp}
+            Normal _ _ _ -> model
+        Delete ->
+          {model | categories = (startRemoval model.selectedRe model.categories)
+                  ,
+                  selectedRe = Normal "Fake" 0 {day = 0, month = 0, year = 0}
+                  }
 
 
 type alias Model =
@@ -640,6 +656,7 @@ type alias Model =
     , catName: String
     , pendingCharges : List Expenses
     , reExpense : Float
+    , selectedRe : Expenses
     }
 
 init : Model
@@ -669,6 +686,7 @@ init = { time = 0
        , catName = ""
        , pendingCharges = []
        , reExpense = 0
+       , selectedRe = Normal "Fake" 0 {day = 0, month = 0, year = 0}
        }
  
 allowedKeys = String.split "" " abcdefghijklmnopqrstuvwxyz1234567890"
@@ -849,6 +867,19 @@ cheatsyDoodle exp model =
   case exp of
     Recurrent name amount _ _ -> Normal name amount model.date
     _ -> Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
+
+startRemoval : Expenses -> List Category -> List Category
+startRemoval exp categories = List.map (\cat -> removeExpense exp cat) categories
+
+removeExpense : Expenses -> Category -> Category
+removeExpense exp cat = {cat | expenseList = List.filter checkForNothing (List.map (\look -> takeOut exp look) cat.expenseList)}
+
+takeOut : Expenses -> Expenses -> Expenses
+takeOut removeIt checkIt =
+  if removeIt == checkIt then
+    Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
+  else
+    checkIt
 
 -- An Expense is as follows: Name, Cost, and date of expenditure. For recurrent, the only change is that date is the time of the next automatic deduction. 
 type Expenses = Normal String Float Date
