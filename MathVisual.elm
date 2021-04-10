@@ -1,3 +1,4 @@
+import String as String
 import Html as Html
 import Html.Attributes as Attributes
 import Html.Events as Events
@@ -5,20 +6,29 @@ import Html.Events as Events
 myShapes model =
     case model.state of
         MainMenu  ->
-            [ text "MainMenu"
-                  |> centered
-                  |> filled black
-            ]
+            [GraphicSVG.text "MainMenu" |> centered |> filled black
+              ,roundedRect 40 25 5 |> filled (rgb 0 200 100) |> move(-71, 45)
+              ,roundedRect 40 25 5 |> outlined (solid 0.5) (rgb 0 0 0) |> move(-71, 45)
+              ,roundedRect 40 25 5 |> filled (rgb 0 200 100) |> move(-21.5, 45)
+              ,roundedRect 40 25 5 |> outlined (solid 0.5) (rgb 0 0 0) |> move(-21.5, 45)
+              ,GraphicSVG.text "Budget" |> filled black  |>move(-107,60) |>scale 0.8
+              ,GraphicSVG.text "Expenses" |> filled black  |>move(-50, 60) |>scale 0.8
+              ,GraphicSVG.text "5000" |> filled black |>move(-115,50) |>scale 0.7
+              ,GraphicSVG.text "1000" |> filled black |>move(-43,50) |>scale 0.7
+              ,GraphicSVG.text "ADD AN EXPENSE" |>filled black |>move (85,90)|>scale 0.5
+              ,button "Reccurent Expenses" ToRE (-22.7,-2.5) 0.48 |> move (-8,-45)
+              ,button "All Expenses" ToCategories (-21,-2.5) 0.6 |> move (75,-45.5)]
         Categories  ->
             [ text "Categories"
                   |> centered
                   |> filled black
+                  |> move (0,45)
+              , button "Back" ToMain (-12,-4) 1 |> move (100,-65) |> scale 0.75
+              , let scale = ((length model.categories)-1)/2
+                in createPartialCategories model.categories (length model.categories) -(scale * 175/(length model.categories))
             ]
         RExpenses  ->
-            [ text "RExpenses"
-                  |> centered
-                  |> filled black
-              ,
+            [
               roundedRect 100 100 5
                 |> filled lightBlue
                 |> move (-40, 0)
@@ -53,7 +63,7 @@ myShapes model =
                 |> move(40, 40)
               ,
               button "Next Day" NextDay (-10, 0) 0.5
-                |> move (40, 0)
+                |> move (59, 0)
               ,
               buildDueExpenseList model
               -- ,
@@ -71,12 +81,108 @@ myShapes model =
                   |> centered
                   |> filled black
             ]
+        FullCategory category ->
+            [ 
+              roundedRect 130 110 5 |> filled (rgb 150 200 250) |> move (-25,-30)
+              , roundedRect 130 110 5 |> outlined (solid 0.5) black |> move (-25,-30)
+              , triangle 10 |> outlined (solid 0.5) black |> rotate (degrees 30) |> move (55,-15)
+              , triangle 10 |> outlined (solid 0.5) black |> rotate (degrees -30) |> move (55,0) 
+              , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees 30) |> move (55,-15) |> notifyTap ScrollUp
+              , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees -30) |> move (55,0) |> notifyTap ScrollDown
+              , createFullList category.expenseList 30 |> move (0,model.scroll) -- add function here instead of group
+              , rect 500 500 |> filled white |> move (0,275)
+              , text category.name
+                  |> centered
+                  |> filled black
+                  |> move (0,45)
+              , group 
+                  [
+                   text "Name" |> filled black |> move (-145,50)
+                   , text "Amount" |> filled black |> move (-80,50)
+                   , text "Date" |> filled black |> move (10,50)
+                  ] |> scale 0.6
+              , button "Back" ToCategories (-12,-4) 1 |> move (100,-65) |> scale 0.75
+            ]
+
 dummyExpense : Expenses
-dummyExpense = 
-  let
-    autoPayment = {day = 3, month = 0, year = 0}
-  in
-    Recurrent "Loans" 1000 autoPayment autoPayment
+dummyExpense = Recurrent "Loans" 1000 {day = 21, month = 3, year = 2} {day = 20, month = 0, year = 1}
+
+length list = case list of
+                [] -> 0
+                x::xs -> 1 + length xs 
+
+createFullList expenseList ypos = case expenseList of
+                          [] -> group []
+                          x::xs -> case x of
+                                     Normal name amount date -> group 
+                                                           [
+                                                             text name |> filled black |>  move (-170,ypos) |> scale 0.5
+                                                             , text ("$"++(String.fromFloat amount)) |> filled black |>  move (-90,ypos) |> scale 0.5
+                                                             , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |>  move (0,ypos) |> scale 0.5
+                                                             , createFullList xs (ypos-15)
+                                                           ]
+                                     Recurrent name amount date extra -> group 
+                                                           [
+                                                             text name |> filled black |>  move (-170,ypos) |> scale 0.5
+                                                             , text ("$"++(String.fromFloat amount)) |> filled black |>  move (-90,ypos) |> scale 0.5
+                                                             , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |>  move (0,ypos) |> scale 0.5
+                                                             , createFullList xs (ypos-15)
+                                                           ]                       
+                                   
+
+
+createPartialCategories categoryList numberOfCategories position = case categoryList of 
+                                                            [] -> group []
+                                                            x::xs -> group 
+                                                                          [
+                                                                           group [roundedRect ((175/numberOfCategories)-6) 75 5
+                                                                                         |> filled (rgb 150 200 250)
+                                                                                  , roundedRect ((175/numberOfCategories)-6) 75 5
+                                                                                         |> outlined (solid 0.5) black
+                                                                                  , text x.name |> filled black |> scale (0.55-1.3/numberOfCategories) |> move (-12,25)
+                                                                                  , createLatestExpense x.expenseList |> scale (1.2-1.5/numberOfCategories)
+                                                                                 ] |> move (position,0) |> notifyTap (ToFullList x) |> notifyTap ResetScroll 
+                                                                           , createPartialCategories xs numberOfCategories (position + (175/numberOfCategories))
+                                                                          ]
+
+createLatestExpense expenseList = case expenseList of
+                                  [] -> group [
+                                                text "Latest Expense:" |> filled black |> scale 0.3 |> move (-12,15)
+                                                , text "None" |> filled black |> scale 0.3 |> move (-12,10)
+                                                , text "Amount:" |> filled black|> scale 0.3 |> move (-12,0)
+                                                , text "0" |> filled black |> scale 0.3 |> move (-12,-5)
+                                                , text "Date:" |> filled black |> scale 0.3 |> move (-12,-15)
+                                                , text "N/A" |> filled black |> scale 0.3 |> move (-12,-20)
+                                              ]
+                                  x::xs -> case x of
+                                              Normal name amount date -> group [
+                                                                                 text "Latest Expense:" |> filled black |> scale 0.32 |> move (-12,15)
+                                                                                 , text name |> filled black |> scale 0.3 |> move (-12,10)
+                                                                                 , text "Amount:" |> filled black |> scale 0.32 |> move (-12,0)
+                                                                                 , text ("$"++(String.fromFloat amount)) |> filled black |> scale 0.3 |> move (-12,-5)
+                                                                                 , text "Date:" |> filled black |> scale 0.32 |> move (-12,-15)
+                                                                                 , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |> scale 0.3 |> move (-12,-20)
+                                                                               ]
+                                              Recurrent name amount date extra-> group [
+                                                                                 text "Latest Expense:" |> filled black |> scale 0.32 |> move (-12,15)
+                                                                                 , text name |> filled black |> scale 0.3 |> move (-12,10)
+                                                                                 , text "Amount:" |> filled black |> scale 0.32 |> move (-12,0)
+                                                                                 , text ("$"++(String.fromFloat amount)) |> filled black |> scale 0.3 |> move (-12,-5)
+                                                                                 , text "Next Automatic" |> filled black |> scale 0.32 |> move (-12,-15)
+                                                                                 , text "Deduction:" |> filled black |> scale 0.32 |> move (-12,-20)
+                                                                                 , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |> scale 0.3 |> move (-12,-25)
+                                                                               ]
+
+
+button sometext transition textposition fontsize = group
+                                  [rect 50 15 |> filled red
+                                   ,
+                                   rect 50 15 |> outlined (solid 0.25) black
+                                   ,
+                                   text sometext |> filled white
+                                                 |>scale fontsize
+                                                 |>move textposition
+                                  ] |>notifyTap transition   
 
 type Msg = Tick Float GetKeyState
          | ToCategories
@@ -84,6 +190,10 @@ type Msg = Tick Float GetKeyState
          | ToHelp
          | ToSettings
          | ToMain
+         | ToFullList Category
+         | ResetScroll
+         | ScrollDown
+         | ScrollUp
          | Drag (Float, Float)
          | SwitchMousePressState (Float, Float)
          | Change String
@@ -95,6 +205,7 @@ type State = MainMenu
            | RExpenses 
            | Help 
            | Settings 
+           | FullCategory Category
 
 type MousePressStates = Released | MouseDown (Float, Float)
 
@@ -105,6 +216,8 @@ update msg model =
         ToCategories ->
             case model.state of
                 MainMenu  ->
+                    { model | state = Categories  }
+                FullCategory category ->
                     { model | state = Categories  }
                 otherwise ->
                     model
@@ -132,6 +245,18 @@ update msg model =
               model
             otherwise ->
               {model | state = MainMenu}
+        ToFullList category ->
+          case model.state of
+            Categories ->
+              {model | state = FullCategory category}
+            otherwise ->
+              model
+        ResetScroll ->
+          {model | scroll = 0}
+        ScrollDown -> 
+          {model | scroll = model.scroll-5}
+        ScrollUp -> 
+          {model | scroll = model.scroll+5}
         Drag (x, y)    
                         -> case model.mouse of 
                                    MouseDown (xDelta, yDelta) 
@@ -165,11 +290,13 @@ update msg model =
                    budget = model.budget - amount
                    }
             _ -> model
+        
 
 type alias Model =
     { time : Float
     , state : State
     , categories : List Category
+    , scroll : Float
     , date : Date
     , mouse : MousePressStates
     , scrollPos : (Float, Float)
@@ -180,12 +307,13 @@ type alias Model =
 
 init : Model
 init = { time = 0 
-       , state = RExpenses
-       , categories = [healthCare, food, transportation, housing, utilities]
+       , state = MainMenu
+       , categories = [healthCare,food,transportation,housing,utilities]
+       , scroll = 0
        , date = {
            day = 1,
-           month = 0,
-           year = 0
+           month = 1,
+           year = 1
          }
        , mouse = Released
        , scrollPos = (0,0)
@@ -282,11 +410,16 @@ expenseEqualityNot testexp actexp =
   else
     True
 
+
 buildReExpense exp =
   case exp of
     Recurrent name amount initDate countdown -> group [
       roundedRect 200 80 10
-        |> filled blue
+        |> filled (rgb 150 200 250)
+        |> move (60, 0)
+      ,
+      roundedRect 200 80 10
+        |> outlined (solid 1) black
         |> move (60, 0)
       ,
       text name
@@ -298,12 +431,12 @@ buildReExpense exp =
         |> move (-20, 0)
         |> scale 0.8
       ,
-      text ("Auto-Payment - " ++ (dateToString (convertMaxDates initDate)))
+      text ("Auto-Payment - " ++ (dateToString initDate))
         |> filled black
         |> move (-20, -20)
         |> scale 0.8
       ,
-      text ("Next-Payment - " ++ (dateToString (convertMaxDates countdown)))
+      text ("Next-Payment - " ++ (dateToString countdown))
         |> filled black
         |> move (-20, -40)
         |> scale 0.8
@@ -334,7 +467,8 @@ expTest exp =
     True
   else
     False
-
+ 
+ 
 -- An Expense is as follows: Name, Cost, and date of expenditure. For recurrent, the only change is that date is the time of the next automatic deduction. 
 type Expenses = Normal String Float Date
                 | Recurrent String Float Date Date
@@ -346,7 +480,7 @@ type alias Category = {
 
 healthCare : Category
 healthCare = {
-    expenseList = [Recurrent "Succ" 200 {day = 3, month = 0, year = 0} {day = 3, month = 0, year = 0}],
+    expenseList = [Normal "medicine" 50 {day=1,month=2,year=2021},Normal "more medicine" 10 {day=30,month=2,year=2021}],
     name = "Healthcare"
   }
 
@@ -370,7 +504,7 @@ housing = {
 
 utilities : Category
 utilities = {
-    expenseList = [],
+    expenseList = [dummyExpense],
     name = "Utilities"
   }
 
@@ -379,6 +513,23 @@ type alias Date = {
     month : Int,
     year : Int
   }
+
+convertMaxDates : Date -> Date
+convertMaxDates date = 
+  let
+    numDays = date.day + date.month*30 + date.year*12*30
+    properDays = modBy 30 numDays
+    properMonths = modBy 12 ((numDays - (modBy 30 numDays)) // 30)
+    properYears = ((numDays - (modBy 30 numDays)) // 30) // 12
+  in
+    {
+      day = properDays
+      ,
+      month = properMonths
+      ,
+      year = properYears
+    }
+
 
 dateToString : Date -> String
 dateToString date =
@@ -410,22 +561,6 @@ getCorrectGrammer dateNum =
   else
     "s"
 
-convertMaxDates : Date -> Date
-convertMaxDates date = 
-  let
-    numDays = date.day + date.month*30 + date.year*12*30
-    properDays = modBy 30 numDays
-    properMonths = modBy 12 ((numDays - (modBy 30 numDays)) // 30)
-    properYears = ((numDays - (modBy 30 numDays)) // 30) // 12
-  in
-    {
-      day = properDays
-      ,
-      month = properMonths
-      ,
-      year = properYears
-    }
-
 -- Used when we have to subtract dates for recurrent stuff.
 dateSubtraction : Date -> Date -> Date
 dateSubtraction date1 date2 =
@@ -447,17 +582,16 @@ dateSubtraction date1 date2 =
         ,
         year = newYears
       }
-button sometext transition textposition fontsize = group[rect 50 15 |> filled darkRed,
-                                   text sometext |> filled white
-                                   |>scale fontsize
-                                   |>move textposition]
-                                   |>notifyTap transition
-
+      
 scrollBar model = group [
-                  roundedRect 3 100 1 
-                     |> filled red
-                     |> move (-87, 0)
-                     |> notifyMouseDownAt SwitchMousePressState                     
+                  roundedRect 6 95 1 
+                     |> filled lightRed
+                     |> move (15, 0)
+                     |> notifyMouseDownAt SwitchMousePressState
+                  ,
+                  roundedRect 6 95 1 
+                     |> outlined (solid 0.5) black
+                     |> move (15, 0)
                   ,
                      case model.mouse of                       
                        MouseDown _ -> rect 185 120 |> ghost 
