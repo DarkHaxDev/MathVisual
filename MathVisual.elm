@@ -25,7 +25,7 @@ myShapes model =
               ,GraphicSVG.text "Budget" |> filled black  |>move(-107,60) |>scale 0.8
               ,GraphicSVG.text "Expenses" |> filled black  |>move(-50, 60) |>scale 0.8
               ,GraphicSVG.text "20000" |> filled black |>move(-115,50) |>scale 0.7
-              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount x.expenseList 0) model.categories)) ) |> filled black |>move(-47,50) |>scale 0.7
+              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount (List.filter checkForNorm x.expenseList) 0) model.categories) + model.reExpense) ) |> filled black |>move(-47,50) |>scale 0.7
               ,button "All Expenses" ToCategories (-21,-2.5) 0.6 |> move (0,-45.5)
               ,buttonRN model "Recurrent" ToRExpense (-9,-2.5) 0.4 gray darkRed |> move (80,55)
               ,buttonRN model "Normal" ToNExpense (-7,-2.5) 0.4 darkRed gray |> move (50,55)
@@ -620,7 +620,7 @@ update msg model =
             Recurrent _ amount _ _ ->
               { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges
                    ,
-                   budget = model.budget - amount
+                   reExpense = model.reExpense - amount
                    }
             _ -> model
 
@@ -650,7 +650,7 @@ type alias Model =
     , currentExpenseName: String
     , catName: String
     , pendingCharges : List Expenses
-    , budget : Float
+    , reExpense : Float
     }
 
 init : Model
@@ -682,7 +682,7 @@ init = { time = 0
        , currentExpenseName = ""
        , catName = ""
        , pendingCharges = []
-       , budget = 8000
+       , reExpense = 0
        }
  
 allowedKeys = String.split "" " abcdefghijklmnopqrstuvwxyz1234567890"
