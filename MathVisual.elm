@@ -52,8 +52,6 @@ myShapes model =
                                "Recurrent" -> recurrentInputs model                      
                                "Normal" -> group[]
                                otherwise   -> group[]
-              ,GraphicSVG.text model.expenseTypeRN |> filled black  |>move(0,0) |>scale 0.8
-              ,GraphicSVG.text (model.currentCategory.name) |> filled black  |>move(60,-40) |>scale 0.8
               ,buttonCat (case model.catName of
                               "" -> "Category" 
                               _ -> model.catName) ToChooseCat (-24,-3) 0.7 |> move (65, 40)
