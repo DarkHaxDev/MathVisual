@@ -91,6 +91,7 @@ myShapes model =
               , button "Back" ToMain (-12,-4) 1 |> move (100,-65) |> scale 0.75
               , let scale = ((length model.categories)-1)/2
                 in createPartialCategories model.categories (length model.categories) -(scale * 175/(length model.categories))
+              , text "Click on a box to view the category's full list of expenses" |> filled black  |> scale 0.3 |> move (-50,-50)  
             ]
         RExpenses  ->
             [
