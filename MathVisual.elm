@@ -104,7 +104,8 @@ myShapes model =
               ,
               text (dateToString model.date)
                 |> filled black
-                |> move(40, 40)
+                |> move(65, 50)
+                |> scale 0.5
               ,
               button "Next Day" NextDay (-10, 0) 0.5
                 |> move (59, 0)
