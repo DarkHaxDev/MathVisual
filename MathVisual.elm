@@ -694,7 +694,7 @@ init = { time = 0
        , nYear = ""
        , dummyExpenseList1 = []
        , expenseTypeRN = ""
-       , currentCategory = food
+       , currentCategory = dummyCategory
        , currentExpense = []
        , currentExpenseName = ""
        , catName = ""
@@ -909,6 +909,8 @@ type alias Category = {
   }
 
 --newDummy model = model.dummyExpenseList1 ++ [dummyExpense]
+dummyCategory : Category
+dummyCategory = {expenseList = [],name = ""}
 
 healthCare : Category
 healthCare = {
