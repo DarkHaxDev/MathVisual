@@ -54,6 +54,12 @@ myShapes model =
               ,
               button "Next Day" NextDay (-10, 0) 0.5
                 |> move (40, 0)
+              ,
+              buildDueExpenseList model
+              -- ,
+              -- text (String.fromFloat model.budget)
+                -- |> filled black
+                -- |> move (40, 0)
             ]
         Help  ->
             [ text "Help"
@@ -82,6 +88,7 @@ type Msg = Tick Float GetKeyState
          | SwitchMousePressState (Float, Float)
          | Change String
          | NextDay
+         | AcceptCharge Expenses
 
 type State = MainMenu 
            | Categories 
@@ -146,8 +153,18 @@ update msg model =
         NextDay ->
           { model | date = convertMaxDates (dateSubtraction model.date {day = -1, month = 0, year = 0})
                     ,
+                    pendingCharges = (alterCharges model.categories)
+                    ,
                     categories = (alterCategory model.categories)
                     }
+        AcceptCharge exp ->
+          case exp of
+            Recurrent _ amount _ _ ->
+              { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges
+                   ,
+                   budget = model.budget - amount
+                   }
+            _ -> model
 
 type alias Model =
     { time : Float
@@ -157,6 +174,8 @@ type alias Model =
     , mouse : MousePressStates
     , scrollPos : (Float, Float)
     , content : String
+    , pendingCharges : List Expenses
+    , budget : Float
     }
 
 init : Model
@@ -171,7 +190,35 @@ init = { time = 0
        , mouse = Released
        , scrollPos = (0,0)
        , content = ""
+       , pendingCharges = []
+       , budget = 8000
        }
+
+alterCharges : List Category -> List Expenses
+alterCharges categories = List.concat (List.map alterChargeExpenses categories)
+
+alterChargeExpenses : Category -> List Expenses
+alterChargeExpenses cat = List.filter checkForNothing (List.map grabDue cat.expenseList)
+
+grabDue : Expenses -> Expenses
+grabDue exp =
+  case exp of
+    Normal _ _ _ -> Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
+    Recurrent _ _ _ countdown ->
+      let
+        nextCountDown = dateSubtraction countdown {day = 1, month = 0, year = 0}
+      in
+        if nextCountDown == {day = 0, month = 0, year = 0} then
+          exp
+        else
+          Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
+
+checkForNothing : Expenses -> Bool
+checkForNothing exp = 
+  if exp == Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0} then
+    False
+  else
+    True
 
 alterCategory : List Category -> List Category
 alterCategory categories = List.map alterCategoryExpenses categories
@@ -195,7 +242,45 @@ checkForCountDown expense =
         else
           Recurrent a b auto auto
           
+makeDueExpense exp =
+  case exp of
+  Recurrent name amount next _ ->
+    group [
+      roundedRect 200 100 10
+        |> filled lightBlue
+      ,
+      text ("The automatic expense " ++ name ++ " is due today. Automatically deducting " ++ (String.fromFloat amount) ++ " from budget.")
+        |> filled black
+        |> scale 0.3
+        |> move (-80, 0)
+      ,
+      text ("The next deduction is " ++ (dateToString (convertMaxDates next)) ++ " from now.")
+        |> filled black
+        |> scale 0.3
+        |> move (-80, -20)
+      ,
+      button "Ok" (AcceptCharge exp) (0,0) 0.3
+        |> move (0, -40)
+    ]
+  
+  _ -> group []
+  
+buildDueExpenseList model =
+  if model.pendingCharges == [] then
+    group []
+  else
+    group <|
+      (square 500
+        |> filled black
+        |> makeTransparent 0.01
+    ) :: (List.map makeDueExpense model.pendingCharges)
 
+expenseEqualityNot : Expenses -> Expenses -> Bool
+expenseEqualityNot testexp actexp =
+  if testexp == actexp then
+    False
+  else
+    True
 
 buildReExpense exp =
   case exp of
@@ -261,7 +346,7 @@ type alias Category = {
 
 healthCare : Category
 healthCare = {
-    expenseList = [dummyExpense],
+    expenseList = [Recurrent "Succ" 200 {day = 3, month = 0, year = 0} {day = 3, month = 0, year = 0}],
     name = "Healthcare"
   }
 
