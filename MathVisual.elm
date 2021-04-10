@@ -777,6 +777,12 @@ expenseEqualityNot testexp actexp =
   else
     True
 
+checkForNorm : Expenses -> Bool
+checkForNorm exp =
+  case exp of
+    Normal _ _ _ -> True
+    Recurrent _ _ _ _ -> False
+
 
 buildReExpense exp =
   case exp of
