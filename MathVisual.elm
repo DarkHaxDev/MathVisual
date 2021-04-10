@@ -211,12 +211,14 @@ stringFromBool value =
                                         "" -> "YYYY"
                                         _ -> model.rYear) ToRyear (-8,-2) 0.48 |> move (81,-25)]
 -}
-checkDate expense model = let
+checkDate expense model =
+  case expense of
+    Recurrent _ _ _ _ -> True
+    Normal name amount date ->
+      let
                                       currModelMonth = (model.date.month)
                                       currModelYear = (model.date.year)
-                                      currExpense = case expense of
-                                                              Normal name amount date -> date
-                                                              Recurrent _ _ _ date -> date
+                                      currExpense = date
                                               in if ((currExpense.month == currModelMonth) && (currModelYear == currExpense.year)) then True else False
 
 
@@ -869,7 +871,7 @@ addRecurrentRecord categories exp model = List.map (\cat -> findExpense cat exp 
 
 findExpense : Category -> Expenses -> Model -> Category
 findExpense cat exp model =
-  if List.member exp cat.expenseList then
+  if (List.member exp cat.expenseList) == True then
     {cat | expenseList = List.filter checkForNothing (cat.expenseList ++ [(cheatsyDoodle exp model)])}
   else
     cat
