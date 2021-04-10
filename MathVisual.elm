@@ -5,19 +5,63 @@ import Html.Events as Events
 
 myShapes model =
     case model.state of
+        ExpenseType -> [inputTemplate "Enter: Normal or Recurrent Expense" model.expenseType]
+        ExpenseName -> [inputTemplate "Enter: Name of the Expense" model.expenseName]
+        ExpenseAmount -> [inputTemplate "Enter: Expense Amount" model.expenseAmount]
+        Nday->[inputTemplate "Enter: Day" model.nDay]
+        Nmonth->[inputTemplate "Enter: Month" model.nMonth]        
+        Nyear->[inputTemplate "Enter: Year" model.nYear]      
+        Rday->[inputTemplate "Enter: Day" model.rDay]
+        Rmonth->[inputTemplate "Enter: Month" model.rMonth]
+        Ryear->[inputTemplate "Enter: Year" model.rYear]
+        ChooseCat->[]
         MainMenu  ->
-            [GraphicSVG.text "MainMenu" |> centered |> filled black
-              ,roundedRect 40 25 5 |> filled (rgb 0 200 100) |> move(-71, 45)
+            [
+              roundedRect 40 25 5 |> filled (rgb 37 199 107) |> move(-71, 45)
               ,roundedRect 40 25 5 |> outlined (solid 0.5) (rgb 0 0 0) |> move(-71, 45)
-              ,roundedRect 40 25 5 |> filled (rgb 0 200 100) |> move(-21.5, 45)
+              ,roundedRect 40 25 5 |> filled (rgb 37 199 107) |> move(-21.5, 45)
               ,roundedRect 40 25 5 |> outlined (solid 0.5) (rgb 0 0 0) |> move(-21.5, 45)
               ,GraphicSVG.text "Budget" |> filled black  |>move(-107,60) |>scale 0.8
               ,GraphicSVG.text "Expenses" |> filled black  |>move(-50, 60) |>scale 0.8
-              ,GraphicSVG.text "5000" |> filled black |>move(-115,50) |>scale 0.7
-              ,GraphicSVG.text "1000" |> filled black |>move(-43,50) |>scale 0.7
-              ,GraphicSVG.text "ADD AN EXPENSE" |>filled black |>move (85,90)|>scale 0.5
-              ,button "Reccurent Expenses" ToRE (-22.7,-2.5) 0.48 |> move (-8,-45)
-              ,button "All Expenses" ToCategories (-21,-2.5) 0.6 |> move (75,-45.5)]
+              ,GraphicSVG.text "20000" |> filled black |>move(-115,50) |>scale 0.7
+              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount x.expenseList 0) model.categories)) ) |> filled black |>move(-47,50) |>scale 0.7
+              ,button "All Expenses" ToCategories (-21,-2.5) 0.6 |> move (0,-45.5)
+              ,buttonRN model "Recurrent" ToRExpense (-9,-2.5) 0.4 gray darkRed |> move (80,55)
+              ,buttonRN model "Normal" ToNExpense (-7,-2.5) 0.4 darkRed gray |> move (50,55)
+              ,button "Add Expense" AddExpense (-21,-2.5) 0.6 |> move (70,-45.5)
+              ,button "Recurrent Expenses" ToRE (-22.7,-2.5) 0.48 |> move (-70,-45)
+              {-,inputBox (case model.expenseType of
+                              "" -> "Expense Type:"
+                              _ -> model.expenseType) ToExpenseType (-19,-1.5) 0.48 |> move (65,40)-}
+              ,inputBox (case model.expenseName of
+                              "" -> "Expense Name:"
+                              _ -> model.expenseName) ToExpenseName (-19,-1.5) 0.48 |> move (65,23)
+              ,inputBox (case model.expenseAmount of
+                              "" -> "Expense Amount:"
+                              _ -> model.expenseAmount) ToExpenseAmount (-19,-1.5) 0.48 |> move (65,7)
+              ,smallInputBox (case model.nDay of
+                              "" -> "DD"
+                              _ -> model.nDay) ToNday (-4,-2) 0.48 |> move (44,-9)
+              ,smallInputBox (case model.nMonth of
+                              "" -> "MM"
+                              _ -> model.nMonth) ToNmonth (-5,-2) 0.48 |> move (60,-9)
+              ,mediumInputBox (case model.nYear of
+                              "" -> "YYYY"
+                              _ -> model.nYear) ToNyear (-8,-2) 0.48 |> move (81,-9)
+              ,case model.expenseTypeRN of
+                               "Recurrent" -> recurrentInputs model                      
+                               "Normal" -> group[]
+                               otherwise   -> group[]
+              ,GraphicSVG.text model.expenseTypeRN |> filled black  |>move(0,0) |>scale 0.8
+              ,GraphicSVG.text (model.currentCategory.name) |> filled black  |>move(60,-40) |>scale 0.8
+              ,buttonCat (case model.catName of
+                              "" -> "Category" 
+                              _ -> model.catName) ToChooseCat (-24,-3) 0.7 |> move (65, 40)
+              , case model.currentExpenseName of
+                                  "" -> group []
+                                  _ -> chooseCat
+
+              ]
         Categories  ->
             [ text "Categories"
                   |> centered
@@ -104,8 +148,67 @@ myShapes model =
               , button "Back" ToCategories (-12,-4) 1 |> move (100,-65) |> scale 0.75
             ]
 
+
+
+chooseCat = group[roundedRect 55 60 5 |> filled white |> move (65,0),
+                   roundedRect 55 60 5 |> outlined (solid 2) green|> move (65,0),
+                   text "Heathcare"  |> filled black |>scale 0.7 |> move(45,21) |>notifyTap (ToCurrCategory healthCare),
+                   text "Housing"  |> filled black |>scale 0.7 |> move(45,10) |>notifyTap (ToCurrCategory housing),
+                   text "Food"  |> filled black |>scale 0.7 |> move(45,-1) |>notifyTap (ToCurrCategory food),
+                   text "Transportation"  |> filled black |>scale 0.7 |> move(40,-12) |>notifyTap (ToCurrCategory transportation),
+                   text "Utilities"  |> filled black |>scale 0.7 |> move(45,-24) |>notifyTap (ToCurrCategory utilities)]
+
 dummyExpense : Expenses
-dummyExpense = Recurrent "Loans" 1000 {day = 21, month = 3, year = 2} {day = 20, month = 0, year = 1}
+dummyExpense = 
+  let
+    autoPayment = {day = 3, month = 0, year = 0}
+  in
+    Recurrent "Loans" 1000 autoPayment autoPayment
+
+
+didType keys letter = 
+  if keys (Key letter) == JustDown then
+    if keys Shift == JustDown || keys Shift == Down then
+      [String.toUpper letter]
+    else
+      [letter]
+  else
+    []
+
+
+
+recurrentInputs model = group[smallInputBox (case model.rDay of
+                              "" -> "DD"
+                              _ -> model.rDay) ToRday (-4,-2) 0.48 |> move (44,-25)
+                        ,smallInputBox (case model.rMonth of
+                                        "" -> "MM"
+                                        _ -> model.rMonth) ToRmonth (-5,-2) 0.48 |> move (60,-25)
+                        ,mediumInputBox (case model.rYear of
+                                        "" -> "YYYY"
+                                        _ -> model.rYear) ToRyear (-8,-2) 0.48 |> move (81,-25)]
+
+
+createExpenseFromInput model = case model.expenseTypeRN of
+                                                  "Recurrent" -> Recurrent model.expenseName (Maybe.withDefault 0 (String.toFloat model.expenseAmount)) {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} {day = (fromString model.rDay) , month = (fromString model.rMonth) , year = (fromString model.rYear)} 
+                                                  "Normal" -> Normal model.expenseName (Maybe.withDefault 0 (String.toFloat model.expenseAmount)) {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} 
+                                                  otherwise -> Normal "Fake" 0.0 {day = 21, month = 3, year = 2}
+                               
+fromString number =  Maybe.withDefault 0 (String.toInt number)
+ 
+inputTemplate someText inputString = group[GraphicSVG.text someText|> centered |> filled black |>move(0,30) |> scale 0.9
+                      ,roundedRect 120 20 5|> outlined (solid 1) green |>move(-20,-5)
+                      ,GraphicSVG.text inputString |>filled black |>move(-40,-10)
+                      ,button "Done" ToMain (-12,-4) 1 |> move (100,7) |> scale 0.75
+                      ,button "Clear" ClearInput (-12,-4) 1 |> move (100,-17) |> scale 0.75] 
+
+--dummyExpense : Expenses
+--dummyExpense = Recurrent "Loans" 1000 {day = 21, month = 3, year = 2} {day = 20, month = 0, year = 1}
+
+dummyExpenseList = [ Recurrent "Loans" 1000 {day = 21, month = 3, year = 2} {day = 20, month = 0, year = 1},  Recurrent "Loans" 103300 {day = 21, month = 3, year = 2} {day = 20, month = 0, year = 1},
+ Recurrent "Loans" 1200 {day = 21, month = 3, year = 2} {day = 20, month = 0, year = 1}]
+
+--dummyExpenseList1 : List Expenses
+--dummyExpenseList1 = []
 
 length list = case list of
                 [] -> 0
@@ -136,9 +239,7 @@ createPartialCategories categoryList numberOfCategories position = case category
                                                             x::xs -> group 
                                                                           [
                                                                            group [roundedRect ((175/numberOfCategories)-6) 75 5
-                                                                                         |> filled (rgb 150 200 250)
-                                                                                  , roundedRect ((175/numberOfCategories)-6) 75 5
-                                                                                         |> outlined (solid 0.5) black
+                                                                                         |> filled lightBlue        
                                                                                   , text x.name |> filled black |> scale (0.55-1.3/numberOfCategories) |> move (-12,25)
                                                                                   , createLatestExpense x.expenseList |> scale (1.2-1.5/numberOfCategories)
                                                                                  ] |> move (position,0) |> notifyTap (ToFullList x) |> notifyTap ResetScroll 
@@ -172,14 +273,62 @@ createLatestExpense expenseList = case expenseList of
                                                                                  , text "Deduction:" |> filled black |> scale 0.32 |> move (-12,-20)
                                                                                  , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |> scale 0.3 |> move (-12,-25)
                                                                                ]
+count_amount expenseList sum = case expenseList of
+                                  [] -> sum
+                                  x::xs -> let curramount = case x of
+                                                              Normal name amount date -> amount 
+                                                              Recurrent name amount date extra -> amount
+                                              in count_amount xs (sum + curramount)
 
 
 button sometext transition textposition fontsize = group
-                                  [rect 50 15 |> filled red
-                                   ,
-                                   rect 50 15 |> outlined (solid 0.25) black
+                                  [rect 50 15 |> filled darkRed
                                    ,
                                    text sometext |> filled white
+                                                 |>scale fontsize
+                                                 |>move textposition
+                                  ] |>notifyTap transition   
+
+buttonCat sometext transition textposition fontsize = group
+                                  [rect 55 12 |> filled darkRed
+                                   ,
+                                   text sometext |> filled white
+                                                 |>scale fontsize
+                                                 |>move textposition
+                                  ] |>notifyTap transition   
+
+buttonRN model sometext transition textposition fontsize color1 color2 = group
+                                  [rect 25 10 |> filled (case model.expenseTypeRN of
+                                                           "Recurrent" -> color1                     
+                                                           "Normal" -> color2
+                                                           otherwise   -> darkRed)
+                                   
+                                   ,text sometext |> filled white
+                                                 |>scale fontsize
+                                                 |>move textposition
+                                  ] |>notifyTap transition   
+
+
+inputBox sometext transition textposition fontsize = group
+                                  [roundedRect 55 11 5|> outlined (solid 2) green
+                                   ,roundedRect 55 11 5|> filled white,
+                                   text sometext |> filled black
+                                                 |>scale fontsize
+                                                 |>move textposition
+                                  ] |>notifyTap transition   
+
+smallInputBox sometext transition textposition fontsize = group
+                                  [roundedRect 12 11 5|> outlined (solid 2) green
+                                   ,roundedRect 12 11 5|> filled white,
+                                   text sometext |> filled black
+                                                 |>scale fontsize
+                                                 |>move textposition
+                                  ] |>notifyTap transition   
+
+mediumInputBox sometext transition textposition fontsize = group
+                                  [roundedRect 22 11 5|> outlined (solid 2) green
+                                   ,roundedRect 22 11 5|> filled white,
+                                   text sometext |> filled black
                                                  |>scale fontsize
                                                  |>move textposition
                                   ] |>notifyTap transition   
@@ -197,8 +346,24 @@ type Msg = Tick Float GetKeyState
          | Drag (Float, Float)
          | SwitchMousePressState (Float, Float)
          | Change String
+         | ToExpenseType
+         | ToExpenseName
+         | ToExpenseAmount
+         | AddExpense
+         | ClearInput
+         | ToNday
+         | ToNmonth
+         | ToNyear
+         | ToRday
+         | ToRmonth
+         | ToRyear
+         | ToRExpense
+         | ToNExpense
+         | ToCurrCategory Category
+         | ToChooseCat
          | NextDay
          | AcceptCharge Expenses
+         
 
 type State = MainMenu 
            | Categories 
@@ -206,13 +371,177 @@ type State = MainMenu
            | Help 
            | Settings 
            | FullCategory Category
+           | ExpenseType
+           | ExpenseName
+           | ExpenseAmount
+           | Nday
+           | Nmonth
+           | Nyear
+           | Rday
+           | Rmonth
+           | Ryear
+           | ChooseCat
+
 
 type MousePressStates = Released | MouseDown (Float, Float)
 
 update msg model =
     case msg of
-        Tick t _ ->
-            { model | time = t }
+        
+        Tick t (keys, _, _) -> case model.state of 
+                ExpenseType ->
+                              { model
+                                      | expenseType = model.expenseType 
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                ExpenseName -> { model
+                                      | expenseName = model.expenseName 
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                ExpenseAmount -> { model
+                                      | expenseAmount = model.expenseAmount 
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                Nday -> { model
+                                      | nDay = model.nDay
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                Nmonth -> { model
+                                      | nMonth = model.nMonth
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                Nyear -> { model
+                                      | nYear = model.nYear
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                Rday -> { model
+                                      | rDay = model.rDay 
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                Rmonth -> { model
+                                      | rMonth = model.rMonth 
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                Ryear -> { model
+                                      | rYear = model.rYear
+                                         ++ ( List.concatMap (didType keys) allowedKeys
+                                             |> String.concat
+                                              )
+                              }
+                otherwise ->
+                    model
+        ClearInput -> case model.state of
+                ExpenseType -> { model| expenseType = ""}
+                ExpenseName -> { model| expenseName = ""}
+                ExpenseAmount -> { model| expenseAmount = ""}
+                Nday -> { model| nDay = ""}
+                Nmonth -> { model| nMonth = ""}
+                Nyear -> { model| nYear = ""}
+                Rday -> { model| rDay = ""}
+                Rmonth -> { model| rMonth = ""}
+                Ryear -> { model| rYear = ""}
+                otherwise ->
+                    model
+        ToRExpense -> case model.state of 
+                MainMenu ->
+                    { model | expenseTypeRN = "Recurrent" }
+                otherwise ->
+                    model
+        ToNExpense -> case model.state of 
+                MainMenu ->
+                    { model | expenseTypeRN = "Normal" }
+                otherwise ->
+                    model
+        ToCurrCategory cat -> case model.state of 
+                MainMenu ->
+                    { model | currentCategory = cat, currentExpenseName = "", catName = cat.name }
+                otherwise ->
+                    model
+        AddExpense -> case model.state of
+                MainMenu  ->
+                    { model | 
+                    expenseType = "", 
+                    expenseName = "", 
+                    expenseAmount = "", 
+                    nDay = "" , 
+                    nMonth = "", 
+                    nYear = "", 
+                    rDay = "", 
+                    rMonth = "", 
+                    rYear = "", 
+                    expenseTypeRN = "",
+                    catName = "",
+                    categories = (List.map (\x -> if ((x.name) == (model.currentCategory.name)) then {x | expenseList = x.expenseList ++ [createExpenseFromInput model]} else x) model.categories)  
+                    } 
+                otherwise ->
+                    model
+        ToExpenseType -> case model.state of
+                MainMenu  ->
+                    { model | state = ExpenseType  } 
+                otherwise ->
+                    model
+        ToExpenseAmount -> case model.state of
+                MainMenu  ->
+                    { model | state = ExpenseAmount  } 
+                otherwise ->
+                    model
+        ToChooseCat -> case model.state of
+                MainMenu  ->
+                    { model | currentExpenseName = "choosing"   } 
+                otherwise ->
+                    model
+        ToExpenseName -> case model.state of
+                MainMenu  ->
+                    { model | state = ExpenseName  } 
+                otherwise ->
+                    model
+        ToNday -> case model.state of
+                MainMenu  ->
+                    { model | state = Nday  } 
+                otherwise ->
+                    model
+        ToNmonth -> case model.state of
+                MainMenu  ->
+                    { model | state = Nmonth  } 
+                otherwise ->
+                    model
+        ToNyear -> case model.state of
+                MainMenu  ->
+                    { model | state = Nyear  } 
+                otherwise ->
+                    model
+        ToRday -> case model.state of
+                MainMenu  ->
+                    { model | state = Rday  } 
+                otherwise ->
+                    model
+        
+        ToRmonth -> case model.state of
+                MainMenu  ->
+                    { model | state = Rmonth  } 
+                otherwise ->
+                    model
+        ToRyear -> case model.state of
+                MainMenu  ->
+                    { model | state = Ryear  } 
+                otherwise ->
+                    model
         ToCategories ->
             case model.state of
                 MainMenu  ->
@@ -278,8 +607,6 @@ update msg model =
         NextDay ->
           { model | date = convertMaxDates (dateSubtraction model.date {day = -1, month = 0, year = 0})
                     ,
-                    pendingCharges = (alterCharges model.categories)
-                    ,
                     categories = (alterCategory model.categories)
                     }
         AcceptCharge exp ->
@@ -290,7 +617,7 @@ update msg model =
                    budget = model.budget - amount
                    }
             _ -> model
-        
+
 
 type alias Model =
     { time : Float
@@ -301,6 +628,21 @@ type alias Model =
     , mouse : MousePressStates
     , scrollPos : (Float, Float)
     , content : String
+    , expenseType : String
+    , expenseName: String
+    , expenseAmount: String
+    , nDay: String
+    , nMonth: String
+    , nYear: String
+    , rDay: String
+    , rMonth: String
+    , rYear: String
+    , dummyExpenseList1: List Expenses
+    , expenseTypeRN: String
+    , currentCategory: Category
+    , currentExpense: List Expenses 
+    , currentExpenseName: String
+    , catName: String
     , pendingCharges : List Expenses
     , budget : Float
     }
@@ -312,15 +654,32 @@ init = { time = 0
        , scroll = 0
        , date = {
            day = 1,
-           month = 1,
-           year = 1
+           month = 0,
+           year = 0
          }
        , mouse = Released
        , scrollPos = (0,0)
        , content = ""
+       , expenseType = ""
+       , expenseName = ""
+       , expenseAmount = ""
+       , nDay = ""
+       , nMonth = ""
+       , nYear = ""
+       , rDay = ""
+       , rMonth = ""
+       , rYear = ""
+       , dummyExpenseList1 = []
+       , expenseTypeRN = ""
+       , currentCategory = food
+       , currentExpense = []
+       , currentExpenseName = ""
+       , catName = ""
        , pendingCharges = []
        , budget = 8000
        }
+ 
+allowedKeys = String.split "" " abcdefghijklmnopqrstuvwxyz1234567890"
 
 alterCharges : List Category -> List Expenses
 alterCharges categories = List.concat (List.map alterChargeExpenses categories)
@@ -341,12 +700,7 @@ grabDue exp =
         else
           Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
 
-checkForNothing : Expenses -> Bool
-checkForNothing exp = 
-  if exp == Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0} then
-    False
-  else
-    True
+
 
 alterCategory : List Category -> List Category
 alterCategory categories = List.map alterCategoryExpenses categories
@@ -370,6 +724,13 @@ checkForCountDown expense =
         else
           Recurrent a b auto auto
           
+checkForNothing : Expenses -> Bool
+checkForNothing exp = 
+  if exp == Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0} then
+    False
+  else
+    True
+
 makeDueExpense exp =
   case exp of
   Recurrent name amount next _ ->
@@ -392,7 +753,7 @@ makeDueExpense exp =
     ]
   
   _ -> group []
-  
+
 buildDueExpenseList model =
   if model.pendingCharges == [] then
     group []
@@ -415,11 +776,7 @@ buildReExpense exp =
   case exp of
     Recurrent name amount initDate countdown -> group [
       roundedRect 200 80 10
-        |> filled (rgb 150 200 250)
-        |> move (60, 0)
-      ,
-      roundedRect 200 80 10
-        |> outlined (solid 1) black
+        |> filled blue
         |> move (60, 0)
       ,
       text name
@@ -473,10 +830,13 @@ expTest exp =
 type Expenses = Normal String Float Date
                 | Recurrent String Float Date Date
 
+--type ExpenseTypeRN = Normal | Recurrent
 type alias Category = {
   expenseList : List Expenses,
   name : String
   }
+
+--newDummy model = model.dummyExpenseList1 ++ [dummyExpense]
 
 healthCare : Category
 healthCare = {
@@ -514,22 +874,6 @@ type alias Date = {
     year : Int
   }
 
-convertMaxDates : Date -> Date
-convertMaxDates date = 
-  let
-    numDays = date.day + date.month*30 + date.year*12*30
-    properDays = modBy 30 numDays
-    properMonths = modBy 12 ((numDays - (modBy 30 numDays)) // 30)
-    properYears = ((numDays - (modBy 30 numDays)) // 30) // 12
-  in
-    {
-      day = properDays
-      ,
-      month = properMonths
-      ,
-      year = properYears
-    }
-
 
 dateToString : Date -> String
 dateToString date =
@@ -561,6 +905,22 @@ getCorrectGrammer dateNum =
   else
     "s"
 
+convertMaxDates : Date -> Date
+convertMaxDates date = 
+  let
+    numDays = date.day + date.month*30 + date.year*12*30
+    properDays = modBy 30 numDays
+    properMonths = modBy 12 ((numDays - (modBy 30 numDays)) // 30)
+    properYears = ((numDays - (modBy 30 numDays)) // 30) // 12
+  in
+    {
+      day = properDays
+      ,
+      month = properMonths
+      ,
+      year = properYears
+    }
+
 -- Used when we have to subtract dates for recurrent stuff.
 dateSubtraction : Date -> Date -> Date
 dateSubtraction date1 date2 =
@@ -584,14 +944,10 @@ dateSubtraction date1 date2 =
       }
       
 scrollBar model = group [
-                  roundedRect 6 95 1 
-                     |> filled lightRed
-                     |> move (15, 0)
-                     |> notifyMouseDownAt SwitchMousePressState
-                  ,
-                  roundedRect 6 95 1 
-                     |> outlined (solid 0.5) black
-                     |> move (15, 0)
+                  roundedRect 3 100 1 
+                     |> filled red
+                     |> move (-87, 0)
+                     |> notifyMouseDownAt SwitchMousePressState                     
                   ,
                      case model.mouse of                       
                        MouseDown _ -> rect 185 120 |> ghost 
