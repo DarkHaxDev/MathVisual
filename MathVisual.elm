@@ -824,16 +824,16 @@ buildReExpense exp =
         |> filled black
         |> move (-20, -40)
         |> scale 0.8
-      ]
+      ] |> notifyTap (Select exp)
     _ -> group []
 
-buildListOfRe : Model -> Shape userMsg
+buildListOfRe : Model -> Shape Msg
 buildListOfRe model = group <| applyTransforms (List.concat (List.map buildReForCat model.categories)) 0
 
 --buildReForCat : Category -> List (Shape userMsg)
 --buildReForCat cat = List.map buildReExpense cat.expenseList
 
-buildReForCat : Category -> List (Shape userMsg)
+buildReForCat : Category -> List (Shape Msg)
 buildReForCat cat = List.filter expTest (List.map buildReExpense cat.expenseList)
 
 applyTransforms : List (Shape userMsg) -> Int -> List (Shape userMsg)
