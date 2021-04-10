@@ -193,7 +193,12 @@ didType keys letter =
   else
     []
 
-
+stringFromBool : Bool -> String
+stringFromBool value =
+  if value then
+    "True"
+  else
+    "False"
 
 recurrentInputs model = group[smallInputBox (case model.rDay of
                               "" -> "DD"
@@ -647,6 +652,8 @@ update msg model =
               { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges
                    ,
                    reExpense = model.reExpense + amount
+                   ,
+                   categories = (addRecurrentRecord model.categories exp model)
                    }
             _ -> model
 
@@ -796,6 +803,13 @@ buildDueExpenseList model =
         |> makeTransparent 0.01
     ) :: (List.map makeDueExpense model.pendingCharges)
 
+expenseEquality : Expenses -> Expenses -> Bool
+expenseEquality testexp actexp =
+  if testexp == actexp then
+    True
+  else
+    False
+
 expenseEqualityNot : Expenses -> Expenses -> Bool
 expenseEqualityNot testexp actexp =
   if testexp == actexp then
@@ -867,7 +881,22 @@ expTest exp =
   else
     False
  
- 
+addRecurrentRecord : List Category -> Expenses -> Model -> List Category
+addRecurrentRecord categories exp model = List.map (\cat -> findExpense cat exp model) categories
+
+findExpense : Category -> Expenses -> Model -> Category
+findExpense cat exp model =
+  if List.member exp cat.expenseList then
+    {cat | expenseList = List.filter checkForNothing (cat.expenseList ++ [(cheatsyDoodle exp model)])}
+  else
+    cat
+
+cheatsyDoodle : Expenses -> Model -> Expenses
+cheatsyDoodle exp model =
+  case exp of
+    Recurrent name amount _ _ -> Normal name amount model.date
+    _ -> Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
+
 -- An Expense is as follows: Name, Cost, and date of expenditure. For recurrent, the only change is that date is the time of the next automatic deduction. 
 type Expenses = Normal String Float Date
                 | Recurrent String Float Date Date
