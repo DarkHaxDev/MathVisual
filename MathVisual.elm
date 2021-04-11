@@ -90,7 +90,7 @@ myShapes model =
                   |> move (0,45)
               , button "Back" ToMain (-12,-4) 1 |> move (100,-65) |> scale 0.75
               , let scale = ((length model.categories)-1)/2
-                in createPartialCategories model.categories (length model.categories) -(scale * 175/(length model.categories))
+                in createPartialCategories model.categories (length model.categories) -(scale * 175/(length model.categories)) -- creates a list of all categories with some information
               , text "Click on a box to view the category's full list of expenses" |> filled black  |> scale 0.3 |> move (-50,-50)  
             ]
         RExpenses  ->
@@ -152,7 +152,7 @@ myShapes model =
               , triangle 10 |> outlined (solid 0.5) black |> rotate (degrees -30) |> move (55,0) 
               , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees 30) |> move (55,-15) |> notifyTap ScrollUp
               , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees -30) |> move (55,0) |> notifyTap ScrollDown
-              , createFullList category (List.filter checkForNorm category.expenseList) 30 |> move (0,model.scroll) -- add function here instead of group
+              , createFullList category (List.filter checkForNorm category.expenseList) 30 |> move (0,model.scroll) -- creates a visible list of all expenses
               , rect 500 500 |> filled white |> move (0,275)
               , text category.name
                   |> centered
@@ -242,7 +242,7 @@ length list = case list of
                 [] -> 0
                 x::xs -> 1 + length xs 
 
-createFullList category expenseList ypos = case expenseList of
+createFullList category expenseList ypos = case expenseList of --creates a a visibile list of all expenses within a category with the option to remove expenses using a button
                           [] -> group []
                           x::xs -> case x of
                                      Normal name amount date -> group 
@@ -264,7 +264,7 @@ createFullList category expenseList ypos = case expenseList of
                                    
 
 
-createPartialCategories categoryList numberOfCategories position = case categoryList of 
+createPartialCategories categoryList numberOfCategories position = case categoryList of -- creates a visible list of all categories with some information about each
                                                             [] -> group []
                                                             x::xs -> group 
                                                                           [
@@ -278,7 +278,7 @@ createPartialCategories categoryList numberOfCategories position = case category
                                                                            , createPartialCategories xs numberOfCategories (position + (175/numberOfCategories))
                                                                           ]
 
-createLatestExpense expenseList = case expenseList of
+createLatestExpense expenseList = case expenseList of -- creates a new expense
                                   [] -> group [
                                                 text "Latest Expense:" |> filled black |> scale 0.3 |> move (-12,15)
                                                 , text "None" |> filled black |> scale 0.3 |> move (-12,10)
@@ -626,11 +626,11 @@ update msg model =
                   }
         RemoveExpense category expense -> { model | categories = removeSingleExpense model.categories category expense}
 
-removeSingleExpense categories category expense = case categories of
+removeSingleExpense categories category expense = case categories of -- finds the category and removes an expense from the list of expenses using a helper function
                                             [] -> []
                                             x::xs -> if x == category then [{x | expenseList = removeExpenseFromCategory category.expenseList expense}]++xs else [x]++(removeSingleExpense xs category expense)
 
-removeExpenseFromCategory expenseList expense = case expenseList of 
+removeExpenseFromCategory expenseList expense = case expenseList of -- helper function to remove an expense from a category
                                             [] -> []
                                             x::xs -> if x == expense then xs else [x]++(removeExpenseFromCategory xs expense)
 
