@@ -213,7 +213,7 @@ stringFromBool value =
 -}
 checkDate expense model =
   case expense of
-    Recurrent _ _ _ _ -> True
+    Recurrent _ _ _ _ -> False
     Normal name amount date ->
       let
                                       currModelMonth = (model.date.month)
@@ -623,7 +623,7 @@ update msg model =
             Recurrent _ amount _ _ ->
               { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges
                    ,
-                   categories = (addRecurrentRecord model.categories exp model)
+                   categories = (addRecurrentRecord model.categories exp model.date)
                    }
             _ -> model
         Select exp ->
@@ -866,20 +866,33 @@ expTest exp =
   else
     False
  
-addRecurrentRecord : List Category -> Expenses -> Model -> List Category
-addRecurrentRecord categories exp model = List.map (\cat -> findExpense cat exp model) categories
+addRecurrentRecord : List Category -> Expenses -> Date -> List Category
+addRecurrentRecord categories exp date = List.map (\cat -> findExpense cat exp date) categories
 
-findExpense : Category -> Expenses -> Model -> Category
-findExpense cat exp model =
-  if (List.member exp cat.expenseList) == True then
-    {cat | expenseList = List.filter checkForNothing (cat.expenseList ++ [(cheatsyDoodle exp model)])}
+findExpense : Category -> Expenses -> Date -> Category
+findExpense cat exp date =
+  if (List.any (\oExp -> checkForEquivReccur exp oExp) cat.expenseList) == True then
+    {cat | expenseList = cat.expenseList ++ (List.filter checkForNorm [cheatsyDoodle exp date])}
   else
     cat
 
-cheatsyDoodle : Expenses -> Model -> Expenses
-cheatsyDoodle exp model =
+checkForEquivReccur : Expenses -> Expenses -> Bool
+checkForEquivReccur exptest expAct = 
+  case exptest of
+    Recurrent name amount date _ ->
+      case expAct of
+        Recurrent oName oAmount oDate _ ->
+          if name == oName && amount == oAmount && date == oDate then
+            True
+          else
+            False
+        Normal _ _ _ -> False
+    Normal _ _ _ -> False
+
+cheatsyDoodle : Expenses -> Date -> Expenses
+cheatsyDoodle exp date =
   case exp of
-    Recurrent name amount _ _ -> Normal name amount model.date
+    Recurrent name amount _ _ -> Normal name amount date
     _ -> Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
 
 startRemoval : Expenses -> List Category -> List Category
