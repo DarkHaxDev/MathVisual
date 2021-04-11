@@ -152,7 +152,7 @@ myShapes model =
               , triangle 10 |> outlined (solid 0.5) black |> rotate (degrees -30) |> move (55,0) 
               , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees 30) |> move (55,-15) |> notifyTap ScrollUp
               , triangle 10 |> filled (rgb 0 200 100) |> rotate (degrees -30) |> move (55,0) |> notifyTap ScrollDown
-              , createFullList category category.expenseList 30 |> move (0,model.scroll) -- add function here instead of group
+              , createFullList category (List.filter checkForNorm category.expenseList) 30 |> move (0,model.scroll) -- add function here instead of group
               , rect 500 500 |> filled white |> move (0,275)
               , text category.name
                   |> centered
@@ -280,7 +280,7 @@ createPartialCategories categoryList numberOfCategories position = case category
                                                                                   , roundedRect ((175/numberOfCategories)-6) 75 5
                                                                                          |> outlined (solid 0.5) black     
                                                                                   , text x.name |> filled black |> scale (0.55-1.3/numberOfCategories) |> move (-12,25)
-                                                                                  , createLatestExpense x.expenseList |> scale (1.2-1.5/numberOfCategories)
+                                                                                  , createLatestExpense (List.filter checkForNorm x.expenseList) |> scale (1.2-1.5/numberOfCategories)
                                                                                  ] |> move (position,0) |> notifyTap (ToFullList x) |> notifyTap ResetScroll 
                                                                            , createPartialCategories xs numberOfCategories (position + (175/numberOfCategories))
                                                                           ]
@@ -927,31 +927,31 @@ dummyCategory = {expenseList = [],name = ""}
 
 healthCare : Category
 healthCare = {
-    expenseList = [Normal "medicine" 50 {day=1,month=2,year=2021},Normal "more medicine" 10 {day=30,month=2,year=2021}],
+    expenseList = [],
     name = "Healthcare"
   }
 
 food : Category
 food = {
-    expenseList = [dummyExpense],
+    expenseList = [],
     name = "Food"
   }
   
 transportation : Category
 transportation = {
-    expenseList = [dummyExpense],
+    expenseList = [],
     name = "Transportation"
   }
   
 housing : Category
 housing = {
-    expenseList = [dummyExpense],
+    expenseList = [],
     name = "Housing"
   }
 
 utilities : Category
 utilities = {
-    expenseList = [dummyExpense],
+    expenseList = [],
     name = "Utilities"
   }
 
