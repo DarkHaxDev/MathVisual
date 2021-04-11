@@ -37,7 +37,7 @@ myShapes model =
               ,GraphicSVG.text "Budget" |> filled black  |>move(-107,60) |>scale 0.8
               ,GraphicSVG.text "Expenses" |> filled black  |>move(-50, 60) |>scale 0.8
               ,GraphicSVG.text "20000" |> filled black |>move(-115,50) |>scale 0.7
-              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount (List.filter (\ls -> checkDate ls model) x.expenseList ) 0) model.categories) + model.reExpense) ) |> filled black |>move(-47,50) |>scale 0.7
+              ,GraphicSVG.text (String.fromFloat (List.sum (List.map (\x -> count_amount (List.filter (\ls -> checkDate ls model) x.expenseList ) 0) model.categories)) ) |> filled black |>move(-47,50) |>scale 0.7
               ,button "All Expenses" ToCategories (-21,-2.5) 0.6 |> move (0,-45.5)
               ,buttonRN model "Recurrent" ToRExpense (-9,-2.5) 0.4 gray darkRed |> move (80,55)
               ,buttonRN model "Normal" ToNExpense (-7,-2.5) 0.4 darkRed gray |> move (50,55)
@@ -601,36 +601,26 @@ update msg model =
                            }
         Change newContent ->
           { model | content = newContent }
-        NextDay ->
-          { model | date = convertMaxDates (dateSubtraction model.date {day = -1, month = 0, year = 0})
+        NextDay -> -- Moves the day forward once.
+          { model | date = convertMaxDates (dateSubtraction model.date {day = -1, month = 0, year = 0}) -- Moves the date forward by one day.
                     ,
-                    reExpense =
-                      let
-                        ogDate = model.date
-                        updatedDate = convertMaxDates (dateSubtraction model.date {day = -1, month = 0, year = 0})
-                      in
-                        if ogDate.month + 1 == updatedDate.month || (0 == updatedDate.month && updatedDate.year /= 0) then
-                          0
-                        else
-                          model.reExpense
+                    pendingCharges = (alterCharges model.categories) -- Update the pending charges list to accept new pending charges.
                     ,
-                    pendingCharges = (alterCharges model.categories)
-                    ,
-                    categories = (alterCategory model.categories)
+                    categories = (alterCategory model.categories) -- Update countdowns on the recurrent expenses.
                     }
-        AcceptCharge exp ->
+        AcceptCharge exp -> -- Adds money to the expenditure this month.
           case exp of
-            Recurrent _ amount _ _ ->
-              { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges
+            Recurrent _ _ _ _ ->
+              { model | pendingCharges = List.filter (\otherExp -> expenseEqualityNot exp otherExp) model.pendingCharges -- Removes the expenditure from the pending charges once its been accepted.
                    ,
-                   categories = (addRecurrentRecord model.categories exp model.date)
+                   categories = (addRecurrentRecord model.categories exp model.date) -- Adds the expense to history.
                    }
             _ -> model
-        Select exp ->
+        Select exp -> -- Allows us to select a recurrent expense for deletion.
           case exp of
             Recurrent _ _ _ _ -> { model | selectedRe = exp}
             Normal _ _ _ -> model
-        Delete ->
+        Delete -> -- Removes the recurrent expense and resets the selectedRe to a dummy value.
           {model | categories = (startRemoval model.selectedRe model.categories)
                   ,
                   selectedRe = Normal "Fake" 0 {day = 0, month = 0, year = 0}
@@ -669,7 +659,6 @@ type alias Model =
     , currentExpenseName: String
     , catName: String
     , pendingCharges : List Expenses
-    , reExpense : Float
     , selectedRe : Expenses
     }
 
@@ -698,19 +687,21 @@ init = { time = 0
        , currentExpense = []
        , currentExpenseName = ""
        , catName = ""
-       , pendingCharges = []
-       , reExpense = 0
-       , selectedRe = Normal "Fake" 0 {day = 0, month = 0, year = 0}
+       , pendingCharges = [] -- List of pending charges to be acknowledged.
+       , selectedRe = Normal "Fake" 0 {day = 0, month = 0, year = 0} -- Dummy value to make sure we can't delete recurrent expenses all willy nilly.
        }
  
 allowedKeys = String.split "" " abcdefghijklmnopqrstuvwxyz1234567890"
 
+-- Looks at the categories expenses, pinpoints which recurrent expenses are due, and then adds them to the pending charges.
 alterCharges : List Category -> List Expenses
 alterCharges categories = List.concat (List.map alterChargeExpenses categories)
 
+-- Looks through an individual categories expenses and finds the due recurrent expenses.
 alterChargeExpenses : Category -> List Expenses
 alterChargeExpenses cat = List.filter checkForNothing (List.map grabDue cat.expenseList)
 
+-- Checks if an expensive is recurrent and is due that day. If so, it returns it, else it returns a dummy value that'll be filtered out.
 grabDue : Expenses -> Expenses
 grabDue exp =
   case exp of
@@ -725,16 +716,19 @@ grabDue exp =
           Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
 
 
-
+-- While countdown the recurrent expenses in all the categories.
 alterCategory : List Category -> List Category
 alterCategory categories = List.map alterCategoryExpenses categories
 
+-- Goes into each categories expenseList and counts the recurrent expenses down.
 alterCategoryExpenses : Category -> Category
 alterCategoryExpenses cat = { cat | expenseList = countDownRecurrent cat.expenseList}
 
+-- A helper function for the above.
 countDownRecurrent : List Expenses -> List Expenses
 countDownRecurrent ls = List.map checkForCountDown ls
 
+-- Checks if a recurrent expense is due or no. If so, then it resets the timer for the due date. Else, it counts down the timer by one day.
 checkForCountDown : Expenses -> Expenses
 checkForCountDown expense =
   case expense of
@@ -747,7 +741,8 @@ checkForCountDown expense =
           Recurrent a b auto nextCountDown
         else
           Recurrent a b auto auto
-          
+
+-- Checks for a dummy value and removes it in List.filter
 checkForNothing : Expenses -> Bool
 checkForNothing exp = 
   if exp == Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0} then
@@ -755,6 +750,7 @@ checkForNothing exp =
   else
     True
 
+-- Creates the shape for a pending charge. Used as a pop up for the user to accept before they can do anything else.
 makeDueExpense exp =
   case exp of
   Recurrent name amount next _ ->
@@ -778,6 +774,7 @@ makeDueExpense exp =
   
   _ -> group []
 
+-- Makes a full list of due charges for model.pendingCharges.
 buildDueExpenseList model =
   if model.pendingCharges == [] then
     group []
@@ -788,6 +785,7 @@ buildDueExpenseList model =
         |> makeTransparent 0.5
     ) :: (List.map makeDueExpense model.pendingCharges)
 
+-- Checks if an expense is equal to another one.
 expenseEquality : Expenses -> Expenses -> Bool
 expenseEquality testexp actexp =
   if testexp == actexp then
@@ -795,6 +793,7 @@ expenseEquality testexp actexp =
   else
     False
 
+-- Checks if an expense is not equal to another one.
 expenseEqualityNot : Expenses -> Expenses -> Bool
 expenseEqualityNot testexp actexp =
   if testexp == actexp then
@@ -802,13 +801,14 @@ expenseEqualityNot testexp actexp =
   else
     True
 
+-- Checks if an expense is of the normal constructor.
 checkForNorm : Expenses -> Bool
 checkForNorm exp =
   case exp of
     Normal _ _ _ -> True
     Recurrent _ _ _ _ -> False
 
-
+-- Builds a recurrent expense to be displayed on the the recurrent expenses page.
 buildReExpense exp =
   case exp of
     Recurrent name amount initDate countdown -> group [
@@ -841,15 +841,15 @@ buildReExpense exp =
       ] |> notifyTap (Select exp)
     _ -> group []
 
+-- Builds a list of displayed recurrent expenses.
 buildListOfRe : Model -> Shape Msg
 buildListOfRe model = group <| applyTransforms (List.concat (List.map buildReForCat model.categories)) 0
 
---buildReForCat : Category -> List (Shape userMsg)
---buildReForCat cat = List.map buildReExpense cat.expenseList
-
+-- Builds a list of displayed recurrent expenses for a particular category.
 buildReForCat : Category -> List (Shape Msg)
 buildReForCat cat = List.filter expTest (List.map buildReExpense cat.expenseList)
 
+-- Applies the proper transformations to a recurrent expense shape.
 applyTransforms : List (Shape userMsg) -> Int -> List (Shape userMsg)
 applyTransforms ls n =
   case ls of
@@ -860,15 +860,18 @@ applyTransforms ls n =
       --  applyTransforms ls n
     [] -> []
 
+-- Checks if a recurrent expense is empty or not. Used in List.filter.
 expTest exp =
   if exp /= group[] then
     True
   else
     False
- 
+
+-- Adds a normal expense to a category when a recurrent expense is due.
 addRecurrentRecord : List Category -> Expenses -> Date -> List Category
 addRecurrentRecord categories exp date = List.map (\cat -> findExpense cat exp date) categories
 
+-- Locates the category of the expense and alters it to add a normal expense of that recurrent expense.
 findExpense : Category -> Expenses -> Date -> Category
 findExpense cat exp date =
   if (List.any (\oExp -> checkForEquivReccur exp oExp) cat.expenseList) == True then
@@ -876,6 +879,7 @@ findExpense cat exp date =
   else
     cat
 
+-- Helper function for the above, checks if two recurrent expenses are equal (disregarding the countdown timer).
 checkForEquivReccur : Expenses -> Expenses -> Bool
 checkForEquivReccur exptest expAct = 
   case exptest of
@@ -889,18 +893,22 @@ checkForEquivReccur exptest expAct =
         Normal _ _ _ -> False
     Normal _ _ _ -> False
 
+-- Converts a recurrent expense to a normal expense.
 cheatsyDoodle : Expenses -> Date -> Expenses
 cheatsyDoodle exp date =
   case exp of
     Recurrent name amount _ _ -> Normal name amount date
     _ -> Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
 
+-- A function that removes a recurrent expense, but keeps the history.
 startRemoval : Expenses -> List Category -> List Category
 startRemoval exp categories = List.map (\cat -> removeExpense exp cat) categories
 
+-- A function that looks through each category, finds the recurrent expense and then removes it.
 removeExpense : Expenses -> Category -> Category
 removeExpense exp cat = {cat | expenseList = List.filter checkForNothing (List.map (\look -> takeOut exp look) cat.expenseList)}
 
+-- Checks if the expense to be removed is equal to the expense being checked. If so, remove it.
 takeOut : Expenses -> Expenses -> Expenses
 takeOut removeIt checkIt =
   case removeIt of
@@ -911,7 +919,8 @@ takeOut removeIt checkIt =
         checkIt
     _ -> checkIt
 
--- An Expense is as follows: Name, Cost, and date of expenditure. For recurrent, the only change is that date is the time of the next automatic deduction. 
+-- An Expense is as follows: Name, Cost, and date of expenditure. 
+-- For recurrent, the only change is that the first date is the payment period, and the second date is the countdown until the next payment is triggered.
 type Expenses = Normal String Float Date
                 | Recurrent String Float Date Date
 
@@ -961,7 +970,7 @@ type alias Date = {
     year : Int
   }
 
-
+-- Converts a date to a string.
 dateToString : Date -> String
 dateToString date =
   let
@@ -975,6 +984,7 @@ dateToString date =
     ++
     (getValidDate day "day")
 
+-- Gets the date with proper grammer.
 getValidDate : Int -> String -> String
 getValidDate amnt unit = 
   if amnt == 0 then
@@ -985,6 +995,7 @@ getValidDate amnt unit =
     else
       (String.fromInt amnt) ++ " " ++ unit ++ (getCorrectGrammer amnt)
 
+-- A helper function for the above.
 getCorrectGrammer : Int -> String
 getCorrectGrammer dateNum =
   if dateNum == 1 then
@@ -992,6 +1003,7 @@ getCorrectGrammer dateNum =
   else
     "s"
 
+-- Makes sure that dates have proper limits. 
 convertMaxDates : Date -> Date
 convertMaxDates date = 
   let
@@ -1008,7 +1020,7 @@ convertMaxDates date =
       year = properYears
     }
 
--- Used when we have to subtract dates for recurrent stuff.
+-- Used when we have to subtract dates.
 dateSubtraction : Date -> Date -> Date
 dateSubtraction date1 date2 =
   let
