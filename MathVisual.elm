@@ -254,7 +254,7 @@ createFullList category expenseList ypos = case expenseList of
                           x::xs -> case x of
                                      Normal name amount date -> group 
                                                            [
-                                                             group [rect 10 2 |> filled red |> rotate (degrees 45), rect 10 2 |> filled red |> rotate (degrees -45)] |> move (60, ypos) |> scale 0.5 |> notifyTap (RemoveExpense category x)
+                                                             group [rect 10 10 |> ghost, rect 10 2 |> filled red |> rotate (degrees 45), rect 10 2 |> filled red |> rotate (degrees -45)] |> move (60, ypos) |> scale 0.5 |> notifyTap (RemoveExpense category x)
                                                              , text name |> filled black |>  move (-170,ypos) |> scale 0.5
                                                              , text ("$"++(String.fromFloat amount)) |> filled black |>  move (-90,ypos) |> scale 0.5
                                                              , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |>  move (0,ypos) |> scale 0.5
@@ -262,7 +262,7 @@ createFullList category expenseList ypos = case expenseList of
                                                            ]
                                      Recurrent name amount date extra -> group 
                                                            [
-                                                             group [rect 10 2 |> filled red |> rotate (degrees 45), rect 10 2 |> filled red |> rotate (degrees -45)] |> move (60, ypos) |> scale 0.5 |> notifyTap (RemoveExpense category x)
+                                                             group [rect 10 10 |> ghost, rect 10 2 |> filled red |> rotate (degrees 45), rect 10 2 |> filled red |> rotate (degrees -45)] |> move (60, ypos) |> scale 0.5 |> notifyTap (RemoveExpense category x)
                                                              , text name |> filled black |>  move (-170,ypos) |> scale 0.5
                                                              , text ("$"++(String.fromFloat amount)) |> filled black |>  move (-90,ypos) |> scale 0.5
                                                              , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |>  move (0,ypos) |> scale 0.5
