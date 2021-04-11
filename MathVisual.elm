@@ -914,7 +914,7 @@ takeOut removeIt checkIt =
   case removeIt of
     Recurrent name amount date _ -> 
       if removeIt == checkIt then
-        Normal name amount date
+        Recurrent "" 0 {day = 0, month = 0, year = 0} {day = 0, month = 0, year = 0}
       else
         checkIt
     _ -> checkIt
