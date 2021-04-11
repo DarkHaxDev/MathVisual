@@ -168,7 +168,7 @@ myShapes model =
             ]
 
 
-
+-- Dropdown menu that shows category options
 chooseCat = group[roundedRect 55 60 5 |> filled white |> move (65,0),
                    roundedRect 55 60 5 |> outlined (solid 2) green|> move (65,0),
                    text "Heathcare"  |> filled black |>scale 0.7 |> move(45,21) |>notifyTap (ToCurrCategory healthCare),
@@ -184,7 +184,7 @@ dummyExpense =
   in
     Recurrent "Loans" 1000 autoPayment autoPayment
 
-
+-- Fuction that appends characters to a list of characters
 didType keys letter = 
   if keys (Key letter) == JustDown then
     if keys Shift == JustDown || keys Shift == Down then
@@ -201,16 +201,8 @@ stringFromBool value =
   else
     "False"
 
-{-recurrentInputs model = group[smallInputBox (case model.rDay of
-                              "" -> "DD"
-                              _ -> model.rDay) ToRday (-4,-2) 0.48 |> move (44,-25)
-                        ,smallInputBox (case model.rMonth of
-                                        "" -> "MM"
-                                        _ -> model.rMonth) ToRmonth (-5,-2) 0.48 |> move (60,-25)
-                        ,mediumInputBox (case model.rYear of
-                                        "" -> "YYYY"
-                                        _ -> model.rYear) ToRyear (-8,-2) 0.48 |> move (81,-25)]
--}
+
+-- Function that checks if the date of the expense is a month away from model's date
 checkDate expense model =
   case expense of
     Recurrent _ _ _ _ -> False
@@ -222,14 +214,15 @@ checkDate expense model =
                                               in if ((currExpense.month == currModelMonth) && (currModelYear == currExpense.year)) then True else False
 
 
-
+-- Creates an expense from user input
 createExpenseFromInput model = case model.expenseTypeRN of
                                                   "Recurrent" -> Recurrent model.expenseName (Maybe.withDefault 0 (String.toFloat model.expenseAmount)) {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} 
                                                   "Normal" -> Normal model.expenseName (Maybe.withDefault 0 (String.toFloat model.expenseAmount)) {day = (fromString model.nDay) , month = (fromString model.nMonth) , year = (fromString model.nYear)} 
                                                   otherwise -> Normal "Fake" 0.0 {day = 21, month = 3, year = 2}
-                               
+-- Converts a string to an integer                        
 fromString number =  Maybe.withDefault 0 (String.toInt number)
  
+-- Input page template
 inputTemplate someText inputString = group[GraphicSVG.text someText|> centered |> filled black |>move(0,30) |> scale 0.9
                       ,roundedRect 120 20 5|> outlined (solid 1) green |>move(-20,-5)
                       ,GraphicSVG.text inputString |>filled black |>move(-40,-10)
@@ -312,6 +305,7 @@ createLatestExpense expenseList = case expenseList of
                                                                                  , text "Deduction:" |> filled black |> scale 0.32 |> move (-12,-20)
                                                                                  , text ((String.fromInt date.day) ++ "/" ++ (String.fromInt date.month) ++ "/" ++ (String.fromInt date.year)) |> filled black |> scale 0.3 |> move (-12,-25)
                                                                                ]
+-- Counts the amount of expenses in the given list
 count_amount expenseList sum = case expenseList of
                                   [] -> sum
                                   x::xs -> let curramount = case x of
@@ -319,7 +313,7 @@ count_amount expenseList sum = case expenseList of
                                                               Recurrent name amount date extra -> amount
                                               in count_amount xs (sum + curramount)
 
-
+-- Button template
 button sometext transition textposition fontsize = group
                                   [rect 50 15 |> filled darkRed
                                    ,
@@ -328,6 +322,7 @@ button sometext transition textposition fontsize = group
                                                  |>move textposition
                                   ] |>notifyTap transition   
 
+-- Button template for Category
 buttonCat sometext transition textposition fontsize = group
                                   [rect 55 12 |> filled darkRed
                                    ,
@@ -336,6 +331,7 @@ buttonCat sometext transition textposition fontsize = group
                                                  |>move textposition
                                   ] |>notifyTap transition   
 
+-- Button template that grays out when pressed
 buttonRN model sometext transition textposition fontsize color1 color2 = group
                                   [rect 25 10 |> filled (case model.expenseTypeRN of
                                                            "Recurrent" -> color1                     
@@ -347,7 +343,7 @@ buttonRN model sometext transition textposition fontsize color1 color2 = group
                                                  |>move textposition
                                   ] |>notifyTap transition   
 
-
+-- Standart Input box template 
 inputBox sometext transition textposition fontsize = group
                                   [roundedRect 55 11 5|> outlined (solid 2) green
                                    ,roundedRect 55 11 5|> filled white,
@@ -356,6 +352,7 @@ inputBox sometext transition textposition fontsize = group
                                                  |>move textposition
                                   ] |>notifyTap transition   
 
+-- Small Input box template for day and month
 smallInputBox sometext transition textposition fontsize = group
                                   [roundedRect 12 11 5|> outlined (solid 2) green
                                    ,roundedRect 12 11 5|> filled white,
@@ -364,6 +361,7 @@ smallInputBox sometext transition textposition fontsize = group
                                                  |>move textposition
                                   ] |>notifyTap transition   
 
+-- Medium Input box template for year
 mediumInputBox sometext transition textposition fontsize = group
                                   [roundedRect 22 11 5|> outlined (solid 2) green
                                    ,roundedRect 22 11 5|> filled white,
@@ -423,7 +421,7 @@ type MousePressStates = Released | MouseDown (Float, Float)
 
 update msg model =
     case msg of
-        
+        -- Takes keyboard input
         Tick t (keys, _, _) -> case model.state of 
                 ExpenseType ->
                               { model
@@ -463,6 +461,7 @@ update msg model =
                                               )
                               }
                 otherwise ->   model
+        -- Clears input fields
         ClearInput -> case model.state of
                 ExpenseType -> { model| expenseType = ""}
                 ExpenseName -> { model| expenseName = ""}
@@ -489,7 +488,7 @@ update msg model =
                 otherwise ->
                     model
         AddExpense -> case model.state of
-                MainMenu  ->
+                MainMenu  ->         -- Adds an expense, checks what category does it belong to 
                     { model | 
                     expenseType = "", 
                     expenseName = "", 
@@ -690,7 +689,8 @@ init = { time = 0
        , pendingCharges = [] -- List of pending charges to be acknowledged.
        , selectedRe = Normal "Fake" 0 {day = 0, month = 0, year = 0} -- Dummy value to make sure we can't delete recurrent expenses all willy nilly.
        }
- 
+
+-- Allowed keys for user input
 allowedKeys = String.split "" " abcdefghijklmnopqrstuvwxyz1234567890"
 
 -- Looks at the categories expenses, pinpoints which recurrent expenses are due, and then adds them to the pending charges.
